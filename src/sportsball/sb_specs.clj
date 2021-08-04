@@ -1,5 +1,6 @@
 (ns sportsball.sb-specs
-  (:require [clojure.spec.alpha :as s])
+  (:require [clojure.spec.alpha :as s]
+            [clojure.spec.gen.alpha :as gen])
   (:import java.util.Date))
 
 ;; Books
@@ -37,4 +38,4 @@
                           :sb/bovada {:sb/home-odds -155 :sb/away-odds 34}
                           :sb/heritage {:sb/home-odds 55 :sb/away-odds 34}})
 
-
+(gen/generate (s/gen :sb/odds-info))
