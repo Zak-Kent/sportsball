@@ -33,16 +33,25 @@
                 (fn [{:keys [::home-team ::away-team]}]
                   (not= home-team away-team))))
 
-(s/def ::timestamp inst?)
+;; Score
+(s/def ::score (s/and
+                (s/nilable int?)
+                (fn [score] (if score (pos? score) true))))
+(s/def ::home-score ::score)
+(s/def ::away-score ::score)
+(s/def ::game-score (s/keys :req [::home-score ::away-score]))
 
+(s/def ::timestamp inst?)
 (s/def ::odds-info (s/keys :req [::teams ::timestamp ::bovada ::betonline
-                                 ::bookmaker ::heritage ::intertops ::youwager]))
+                                 ::bookmaker ::heritage ::intertops ::youwager
+                                 ::game-score]))
 
 (s/conform ::odds-info {::timestamp (Date.)
-                        ::teams {::home "ARI" ::away "TEX"}
+                        ::game-score {::home-score 1 ::away-score 3}
+                        ::teams {::home-team "ARI" ::away-team "TEX"}
                         ::bovada {::home-odds -155 ::away-odds 34}
                         ::heritage {::home-odds 55 ::away-odds 34}
-                        ::betonline {::home-odds 55 ::away-odds nil}
+                        ::betonline {::home-odds nil ::away-odds nil}
                         ::bookmaker {::home-odds 55 ::away-odds 34}
                         ::intertops {::home-odds 55 ::away-odds 34}
                         ::youwager {::home-odds 55 ::away-odds 34}})
