@@ -4,6 +4,8 @@
   (:import java.util.Date))
 
 ;; Books
+;; you could maybe switch this to s/nilable to get more data, with the
+;; current approach you're getting a bunch of nils every time
 (s/def ::odds (s/or :int int? :nil nil?)) ; s/nilable doesn't generate nils
 (s/def ::home-odds ::odds)
 (s/def ::away-odds ::odds)
@@ -12,7 +14,6 @@
                     (fn [{:keys [::home-odds ::away-odds]}]
                       ;; due to the s/or in ::odds home/away-odds are MapEntrys
                       (= (type (val home-odds)) (type (val away-odds))))))
-
 (s/def ::bovada ::book-odds)
 (s/def ::betonline ::book-odds)
 (s/def ::bookmaker ::book-odds)
@@ -20,15 +21,17 @@
 (s/def ::intertops ::book-odds)
 (s/def ::youwager ::book-odds)
 
+;; Teams
 (def team-abrv #{"ARI" "ATL" "BAL" "BOS" "CHC" "CWS" "CIN" "CLE" "COL"
                  "DET" "FLA" "HOU" "KAN" "LAA" "LAD" "MIL" "MIN" "NYM"
                  "NYY" "OAK" "PHI" "PIT" "SD" "SF" "SEA" "STL" "TB"
                  "TEX" "TOR" "WAS"})
-
-(s/def ::team-id team-abrv)
-(s/def ::home ::team-id)
-(s/def ::away ::team-id)
-(s/def ::teams (s/keys :req [::home ::away]))
+(s/def ::home-team team-abrv)
+(s/def ::away-team team-abrv)
+(s/def ::teams (s/and
+                (s/keys :req [::home-team ::away-team])
+                (fn [{:keys [::home-team ::away-team]}]
+                  (not= home-team away-team))))
 
 (s/def ::timestamp inst?)
 
