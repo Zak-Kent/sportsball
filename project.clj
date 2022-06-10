@@ -6,7 +6,8 @@
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [com.github.seancorfield/next.jdbc "1.2.780"]
                  [org.postgresql/postgresql "42.3.6"]
-                 [clojure.java-time "0.3.3"]]
+                 [clojure.java-time "0.3.3"]
+                 [metosin/malli "0.8.4"]]
   :main ^:skip-aot sportsball.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all

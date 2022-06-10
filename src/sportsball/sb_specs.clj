@@ -1,59 +1,76 @@
 (ns sportsball.sb-specs
-  (:require [clojure.spec.alpha :as s]
-            [clojure.spec.gen.alpha :as gen])
+  (:require [malli.core :as m]
+            [malli.generator :as mg])
   (:import java.util.Date))
 
 ;; Books
-;; you could maybe switch this to s/nilable to get more data, with the
-;; current approach you're getting a bunch of nils every time
-(s/def ::odds (s/or :int int? :nil nil?)) ; s/nilable doesn't generate nils
-(s/def ::home-odds ::odds)
-(s/def ::away-odds ::odds)
-(s/def ::book-odds (s/and
-                    (s/keys :req [::home-odds ::away-odds])
-                    (fn [{:keys [::home-odds ::away-odds]}]
-                      ;; due to the s/or in ::odds home/away-odds are MapEntrys
-                      (= (type (val home-odds)) (type (val away-odds))))))
-(s/def ::bovada ::book-odds)
-(s/def ::betonline ::book-odds)
-(s/def ::bookmaker ::book-odds)
-(s/def ::heritage ::book-odds)
-(s/def ::intertops ::book-odds)
-(s/def ::youwager ::book-odds)
+(def odds (m/schema [:maybe int?]))
+(def home-odds odds)
+(def away-odds odds)
+(def book-odds (m/schema
+                [:and
+                 [:map
+                  {:closed true}
+                  [:home-odds home-odds]
+                  [:away-odds away-odds]]
+                 [:fn (fn [{:keys [:home-odds :away-odds]}]
+                        (= (type home-odds) (type away-odds)))]]))
+(def bovada book-odds)
+(def betonline book-odds)
+(def bookmaker book-odds)
+(def heritage book-odds)
+(def intertops book-odds)
+(def youwager book-odds)
 
 ;; Teams
-(def team-abrv #{"ARI" "ATL" "BAL" "BOS" "CHC" "CWS" "CIN" "CLE" "COL"
-                 "DET" "FLA" "HOU" "KAN" "LAA" "LAD" "MIL" "MIN" "NYM"
-                 "NYY" "OAK" "PHI" "PIT" "SD" "SF" "SEA" "STL" "TB"
-                 "TEX" "TOR" "WAS"})
-(s/def ::home-team team-abrv)
-(s/def ::away-team team-abrv)
-(s/def ::teams (s/and
-                (s/keys :req [::home-team ::away-team])
-                (fn [{:keys [::home-team ::away-team]}]
-                  (not= home-team away-team))))
+(def team-abrv [:enum "ARI" "ATL" "BAL" "BOS" "CHC" "CWS" "CIN" "CLE" "COL"
+                "DET" "FLA" "HOU" "KAN" "LAA" "LAD" "MIL" "MIN" "NYM" "NYY"
+                "OAK" "PHI" "PIT" "SD" "SF" "SEA" "STL" "TB" "TEX" "TOR"
+                "WAS"])
+(def home-team (m/schema team-abrv))
+(def away-team (m/schema team-abrv))
+(def teams (m/schema
+            [:and
+             [:map
+              {:closed true}
+              [:home-team home-team]
+              [:away-team away-team]]
+             [:fn (fn [{:keys [:home-team :away-team]}]
+                    (not= home-team away-team))]]))
 
 ;; Score
-(s/def ::score (s/and
-                (s/nilable int?)
-                (fn [score] (if score (pos? score) true))))
-(s/def ::home-score ::score)
-(s/def ::away-score ::score)
-(s/def ::game-score (s/keys :req [::home-score ::away-score]))
+(def score (m/schema [:maybe nat-int?]))
+(def home-score score)
+(def away-score score)
+(def game-score (m/schema
+                 [:map
+                  {:closed true}
+                  [:home-score home-score]
+                  [:away-score away-score]]))
 
-(s/def ::timestamp inst?)
-(s/def ::odds-info (s/keys :req [::teams ::timestamp ::bovada ::betonline
-                                 ::bookmaker ::heritage ::intertops ::youwager
-                                 ::game-score]))
+(def timestamp (m/schema [inst?]))
+(def odds-info (m/schema
+                [:map
+                 {:closed true}
+                 [:teams teams]
+                 [:timestamp timestamp]
+                 [:bovada bovada]
+                 [:betonline betonline]
+                 [:bookmaker bookmaker]
+                 [:heritage heritage]
+                 [:intertops intertops]
+                 [:youwager youwager]
+                 [:game-score game-score]]))
 
-(s/conform ::odds-info {::timestamp (Date.)
-                        ::game-score {::home-score 1 ::away-score 3}
-                        ::teams {::home-team "ARI" ::away-team "TEX"}
-                        ::bovada {::home-odds -155 ::away-odds 34}
-                        ::heritage {::home-odds 55 ::away-odds 34}
-                        ::betonline {::home-odds nil ::away-odds nil}
-                        ::bookmaker {::home-odds 55 ::away-odds 34}
-                        ::intertops {::home-odds 55 ::away-odds 34}
-                        ::youwager {::home-odds 55 ::away-odds 34}})
+(m/validate odds-info
+            {:timestamp (Date.)
+             :game-score {:home-score 1 :away-score 3}
+             :teams {:home-team "ARI" :away-team "TEX"}
+             :bovada {:home-odds -155 :away-odds 34}
+             :heritage {:home-odds 55 :away-odds 34}
+             :betonline {:home-odds nil :away-odds nil}
+             :bookmaker {:home-odds 55 :away-odds 34}
+             :intertops {:home-odds 55 :away-odds 34}
+             :youwager {:home-odds 55 :away-odds 34}})
 
-(gen/generate (s/gen ::odds-info))
+(mg/generate odds-info {:seed 55})
