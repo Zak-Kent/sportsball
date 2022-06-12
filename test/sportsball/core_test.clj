@@ -5,7 +5,7 @@
             [sportsball.core :refer :all]))
 
 (defn test-odds-insert []
-  (sql/insert! tu/*db-conn* :odds (gen-fake-row)))
+  (sql/insert! tu/*db-conn* :odds (tu/gen-fake-odds-info)))
 
 (defn query-test-db []
   (sql/query tu/*db-conn* ["select count(*) from odds"]))

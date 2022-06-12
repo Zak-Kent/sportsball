@@ -2,8 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.string :as str]
             [next.jdbc :as jdbc]
-            [next.jdbc.sql :as sql]
-            [java-time :as t])
+            [next.jdbc.sql :as sql])
   (:import java.util.Date)
   (:gen-class))
 
@@ -29,23 +28,9 @@
 (defn create-odds-table []
   (jdbc/execute! db odds-table-sql))
 
-(defn gen-fake-row []
-  {:time (t/sql-timestamp (t/with-zone (t/zoned-date-time) "UTC"))
-   :sportsbook "westgate"
-   :matchup "NYY-BOS"
-   :home_line (rand-nth [-110 110 130 -130])
-   :away_line (rand-nth [-110 110 130 -130])
-   :home_score (rand-nth [0 1 2 3])
-   :away_score (rand-nth [0 1 2 3])})
-
-(defn insert-dummy []
-  (sql/insert! db :odds (gen-fake-row)))
-
 (defn check-odds []
   (jdbc/execute! db [" SELECT * from odds; "]))
 
 (defn -main
   [& args]
-  (create-odds-table)
-  (insert-dummy)
-  (prn (check-odds)))
+  (create-odds-table))

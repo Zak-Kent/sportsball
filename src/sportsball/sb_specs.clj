@@ -1,10 +1,11 @@
 (ns sportsball.sb-specs
   (:require [malli.core :as m]
-            [malli.generator :as mg])
+            [malli.generator :as mg]
+            [malli.transform :as mt])
   (:import java.util.Date))
 
 ;; Books
-(def odds (m/schema [:maybe int?]))
+(def odds (m/schema [:maybe [:int {:min -400 :max 400}]]))
 (def home-odds odds)
 (def away-odds odds)
 (def book-odds (m/schema
@@ -62,15 +63,18 @@
                  [:youwager youwager]
                  [:game-score game-score]]))
 
-(m/validate odds-info
-            {:timestamp (Date.)
-             :game-score {:home-score 1 :away-score 3}
-             :teams {:home-team "ARI" :away-team "TEX"}
-             :bovada {:home-odds -155 :away-odds 34}
-             :heritage {:home-odds 55 :away-odds 34}
-             :betonline {:home-odds nil :away-odds nil}
-             :bookmaker {:home-odds 55 :away-odds 34}
-             :intertops {:home-odds 55 :away-odds 34}
-             :youwager {:home-odds 55 :away-odds 34}})
+(comment
+  (m/validate odds-info
+              {:timestamp (Date.)
+               :game-score {:home-score 1 :away-score 3}
+               :teams {:home-team "ARI" :away-team "TEX"}
+               :bovada {:home-odds -155 :away-odds 34}
+               :heritage {:home-odds 55 :away-odds 34}
+               :betonline {:home-odds nil :away-odds nil}
+               :bookmaker {:home-odds 55 :away-odds 34}
+               :intertops {:home-odds 55 :away-odds 34}
+               :youwager {:home-odds 55 :away-odds 34}})
 
-(mg/generate odds-info {:seed 55})
+  (mg/generate odds-info {:seed 55})
+
+  )

@@ -1,8 +1,13 @@
 (ns sportsball.testutils
-  (:require  [clojure.test :as t]
-             [clojure.string :as str]
-             [next.jdbc :as jdbc]
-             [sportsball.core :as sbcore]))
+  (:require [clojure.string :as str]
+            [malli.generator :as mg]
+            [next.jdbc :as jdbc]
+            [java-time :as t]
+            [jsonista.core :as j]
+            [malli.core :as m]
+            [malli.transform :as mt]
+            [sportsball.sb-specs :as sbs]
+            [sportsball.core :as sbc]))
 
 (def ^:dynamic *db-conn* nil)
 
@@ -26,7 +31,7 @@
       (jdbc/execute! conn [(format "create database %s" db)])
       (with-open [db-conn (jdbc/get-connection
                            (jdbc/get-datasource db-conf))]
-        (jdbc/execute! db-conn sbcore/odds-table-sql)))
+        (jdbc/execute! db-conn sbc/odds-table-sql)))
     db-conf))
 
 (defn call-with-test-db [f]
@@ -37,4 +42,20 @@
         (f)))))
 
 (defmacro with-test-db [& body]
-    `(call-with-test-db (fn [] ~@body)))
+  `(call-with-test-db (fn [] ~@body)))
+
+(defn gen-fake-odds-info []
+  {:time (t/sql-timestamp (t/with-zone (t/zoned-date-time) "UTC"))
+   :sportsbook "westgate"
+   :matchup "NYY-BOS"
+   :home_line (rand-nth [-110 110 130 -130])
+   :away_line (rand-nth [-110 110 130 -130])
+   :home_score (rand-nth [0 1 2 3])
+   :away_score (rand-nth [0 1 2 3])})
+
+(defn gen-fake-odds-json []
+  (j/write-value-as-string
+   (m/encode
+    sbs/odds-info
+    (gen-fake-odds-info)
+    mt/json-transformer)))
