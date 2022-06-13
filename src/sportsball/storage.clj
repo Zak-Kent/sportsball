@@ -12,14 +12,25 @@
                        str/trim-newline)
          :dbname "sportsball"})
 
-(def odds-table-sql ["create table if not exists odds (
-                        time TIMESTAMPTZ NOT NULL,
-                        sportsbook VARCHAR NOT NULL,
-                        matchup VARCHAR NOT NULL,
-                        home_line SMALLINT NOT NULL,
-                        away_line SMALLINT NOT NULL,
-                        home_score SMALLINT NOT NULL,
-                        away_score SMALLINT NOT NULL)"])
+(def matchup-table-sql
+  ["create table if not exists matchup (
+      matchup_id INTEGER PRIMARY KEY,
+      time TIMESTAMPTZ NOT NULL,
+      matchup VARCHAR NOT NULL)"])
+
+(def odds-table-sql
+  ["create table if not exists odds (
+      time TIMESTAMPTZ NOT NULL,
+      lines JSONB NOT NULL,
+      home_score SMALLINT NOT NULL,
+      away_score SMALLINT NOT NULL,
+      matchup_id INTEGER,
+      CONSTRAINT fk_matchup
+        FOREIGN KEY (matchup_id)
+          REFERENCES matchup(matchup_id))"])
+
+(defn create-matchup-table []
+  (jdbc/execute! db matchup-table-sql))
 
 (defn create-odds-table []
   (jdbc/execute! db odds-table-sql))

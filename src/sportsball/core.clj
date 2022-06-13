@@ -4,4 +4,5 @@
 
 (defn -main
   [& args]
+  (st/create-matchup-table)
   (st/create-odds-table))
