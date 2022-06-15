@@ -8,10 +8,10 @@
             [sportsball.storage :as store]))
 
 (defn test-odds-insert []
-  (sql/insert! tu/*db-conn* :odds (tu/gen-fake-odds-info)))
+  (sql/insert! store/*db* :odds (tu/gen-fake-odds-info)))
 
 (defn query-test-db [query]
-  (sql/query tu/*db-conn* [query]))
+  (sql/query store/*db* [query]))
 
 (defn gen-odds-info
   ([] (gen-odds-info 42))
@@ -29,5 +29,3 @@
     (let [odds (gen-odds-info)]
       (store/store-matchup odds)
       (is (= [{:count 1}] (query-test-db "select count(*) from matchup"))))))
-
-

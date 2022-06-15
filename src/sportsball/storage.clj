@@ -14,6 +14,8 @@
                        str/trim-newline)
          :dbname "sportsball"})
 
+(def ^:dynamic *db* db)
+
 (def matchup-table-sql
   ["create table if not exists matchup (
       matchup_id SERIAL PRIMARY KEY,
@@ -32,13 +34,13 @@
           REFERENCES matchup(matchup_id))"])
 
 (defn create-matchup-table []
-  (jdbc/execute! db matchup-table-sql))
+  (jdbc/execute! *db* matchup-table-sql))
 
 (defn create-odds-table []
-  (jdbc/execute! db odds-table-sql))
+  (jdbc/execute! *db* odds-table-sql))
 
 (defn check-odds []
-  (jdbc/execute! db [" SELECT * from odds; "]))
+  (jdbc/execute! *db* [" SELECT * from odds; "]))
 
 (defn odds->matchup [odds]
   (let [ts (:timestamp odds)
@@ -58,7 +60,7 @@
   (let [get-date (fn [m] (-> (:matchup/time m)
                          get-local-date))
         db-matchups (sql/query
-                     db
+                     *db*
                      ["select * from matchup where teams = ?"
                       (:matchup/teams matchup)])
         in-matchup (get-date matchup)]
@@ -74,4 +76,4 @@
       ;; TODO handle case if there are matching games on the same date
       ;; double headers, etc
       (:matchup/matchup_id (first existing-mup))
-      (:matchup/matchup_id (sql/insert! db :matchup mup)))))
+      (:matchup/matchup_id (sql/insert! *db* :matchup mup)))))
