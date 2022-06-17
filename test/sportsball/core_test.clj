@@ -36,6 +36,16 @@
       (is (= [{:count 1}]
              (query-test-db "select count(*) from matchup"))))))
 
+
+
+
+
+
+
+
+
+
+
 (deftest matchup-on-diff-day-creates-new-mathcup
   (tu/with-test-db
     (let [odds (gen-odds-info)
