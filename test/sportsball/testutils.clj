@@ -29,8 +29,8 @@
       (jdbc/execute! conn [(format "create database %s" db)])
       (with-open [db-conn (jdbc/get-connection
                            (jdbc/get-datasource db-conf))]
-        (jdbc/execute! db-conn sbst/matchup-table-sql)
-        (jdbc/execute! db-conn sbst/odds-table-sql)))
+        (jdbc/execute! db-conn store/matchup-table-sql)
+        (jdbc/execute! db-conn store/odds-table-sql)))
     db-conf))
 
 (defn call-with-test-db [f]
