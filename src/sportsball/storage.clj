@@ -77,3 +77,19 @@
       ;; double headers, etc
       (:matchup/matchup_id (first existing-mup))
       (:matchup/matchup_id (sql/insert! *db* :matchup mup)))))
+
+(defn store-odds [odds-info]
+  (let [nil->0 #(if (nil? %) 0 %)
+        get-score (fn [score]
+                    (-> odds-info :game-score score nil->0))
+        home-score (get-score :home-score)
+        away-score (get-score :away-score)
+        ts (:timestamp odds-info)
+        match-id (store-matchup odds-info)
+        lines (dissoc odds-info :teams :game-score :timestamp)
+        odds-row {:home_score home-score
+                  :away_score away-score
+                  :time ts
+                  :matchup_id match-id
+                  :lines (with-meta lines {:pgtype "jsonb"})}]
+    (sql/insert! *db* :odds odds-row)))
