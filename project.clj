@@ -8,7 +8,9 @@
                  [org.postgresql/postgresql "42.3.6"]
                  [clojure.java-time "0.3.3"]
                  [metosin/malli "0.8.4"]
-                 [metosin/jsonista "0.3.6"]]
+                 [metosin/jsonista "0.3.6"]
+                 [metosin/reitit "0.5.18"]
+                 [ring/ring-jetty-adapter "1.9.5"]]
   :main ^:skip-aot sportsball.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
