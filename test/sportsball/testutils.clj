@@ -7,7 +7,8 @@
             [malli.core :as m]
             [malli.transform :as mt]
             [sportsball.sb-specs :as sbs]
-            [sportsball.storage :as store]))
+            [sportsball.storage :as store]
+            [sportsball.core :as sbcore]))
 
 (defn db-config []
   {:dbtype "postgresql"
@@ -49,3 +50,17 @@
     sbs/odds-info
     (mg/generate sbs/odds-info {:seed 55})
     mt/json-transformer)))
+
+;; http test setup
+(def ^:dynamic *app* nil)
+
+(defn call-with-http-app
+  "Builds an HTTP app and make it available as *app* during the
+  execution of (f)."
+  [f]
+  (binding [*app* sbcore/app-routes]
+    (f)))
+
+(defmacro with-http-app
+  [& body]
+  `(call-with-http-app (fn [] ~@body)))
