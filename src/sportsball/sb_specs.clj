@@ -1,7 +1,8 @@
 (ns sportsball.sb-specs
   (:require [malli.core :as m]
             [malli.generator :as mg]
-            [malli.transform :as mt])
+            [malli.transform :as mt]
+            [malli.error :as me])
   (:import java.util.Date))
 
 ;; Books
@@ -63,18 +64,9 @@
                  [:youwager youwager]
                  [:game-score game-score]]))
 
-(comment
-  (m/validate odds-info
-              {:timestamp (Date.)
-               :game-score {:home-score 1 :away-score 3}
-               :teams {:home-team "ARI" :away-team "TEX"}
-               :bovada {:home-odds -155 :away-odds 34}
-               :heritage {:home-odds 55 :away-odds 34}
-               :betonline {:home-odds nil :away-odds nil}
-               :bookmaker {:home-odds 55 :away-odds 34}
-               :intertops {:home-odds 55 :away-odds 34}
-               :youwager {:home-odds 55 :away-odds 34}})
+(def valid-odds?
+  (m/explainer odds-info))
 
-  (mg/generate odds-info {:seed 55})
-
-  )
+(defn check-odds [odds]
+  (when-let [err (valid-odds? odds)]
+    (me/humanize err)))

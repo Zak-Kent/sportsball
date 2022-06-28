@@ -7,7 +7,7 @@
             [malli.generator :as mg]
             [sportsball.sb-specs :as sbspec]
             [sportsball.storage :as store]
-            [ring.mock.request :refer [request json-body]]))
+            [ring.mock.request :as mock]))
 
 (defn query-test-db [query]
   (sql/query store/*db* [query]))
@@ -56,8 +56,16 @@
              (query-test-db "select count(*) from odds"))))))
 
 (deftest basic-storage-via-odds-endpoint
-  (tu/with-test-db
-    (tu/with-http-app
-      (is (= 200
-             (:status (tu/*app* (-> (request :post "/odds")
-                                    (json-body (gen-odds-info))))))))))
+  (tu/with-http-app
+    (is (= 200
+           (:status (tu/*app* (-> (mock/request :post "/odds")
+                                  (mock/json-body (gen-odds-info)))))))))
+
+(deftest malformed-request-body-odds-endpoint
+  (tu/with-http-app
+    (is (= 400
+           (:status
+            (tu/*app* (-> (mock/request :post "/odds")
+                          (mock/json-body
+                           (-> (gen-odds-info)
+                               (update :timestamp (constantly nil)))))))))))

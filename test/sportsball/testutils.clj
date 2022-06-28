@@ -59,7 +59,8 @@
   execution of (f)."
   [f]
   (binding [*app* sbcore/app-routes]
-    (f)))
+    (with-test-db
+      (f))))
 
 (defmacro with-http-app
   [& body]
