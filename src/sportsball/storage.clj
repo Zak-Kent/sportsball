@@ -66,11 +66,11 @@
         in-matchup (get-date matchup)]
     (filter (fn [m] (= (get-date m) in-matchup)) db-matchups)))
 
-(defn store-matchup [odds-info]
+(defn store-matchup [odds]
   "Takes an incoming odds bundle decides whether or not to store
    a new matchup. Returns the matchup_id used as a FK in the odds
    table."
-  (let [mup (odds->matchup odds-info)
+  (let [mup (odds->matchup odds)
         existing-mup (check-matchup mup)]
     (if (seq existing-mup)
       ;; TODO handle case if there are matching games on the same date
@@ -78,15 +78,15 @@
       (:matchup/matchup_id (first existing-mup))
       (:matchup/matchup_id (sql/insert! *db* :matchup mup)))))
 
-(defn store-odds [odds-info]
+(defn store-odds [odds]
   (let [nil->0 #(if (nil? %) 0 %)
         get-score (fn [score]
-                    (-> odds-info :game-score score nil->0))
+                    (-> odds :game-score score nil->0))
         home-score (get-score :home-score)
         away-score (get-score :away-score)
-        ts (:timestamp odds-info)
-        match-id (store-matchup odds-info)
-        lines (dissoc odds-info :teams :game-score :timestamp)
+        ts (:timestamp odds)
+        match-id (store-matchup odds)
+        lines (dissoc odds :teams :game-score :timestamp)
         odds-row {:home_score home-score
                   :away_score away-score
                   :time ts

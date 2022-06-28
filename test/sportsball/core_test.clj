@@ -12,6 +12,12 @@
 (defn query-test-db [query]
   (sql/query store/*db* [query]))
 
+(defn all-matchups []
+  (query-test-db "select count(*) from matchup"))
+
+(defn all-odds []
+  (query-test-db "select count(*) from odds"))
+
 (defn gen-odds-info
   ([] (gen-odds-info 42))
   ([seed]
@@ -22,7 +28,7 @@
   (tu/with-test-db
     (let [odds (gen-odds-info)]
       (store/store-matchup odds)
-      (is (= [{:count 1}] (query-test-db "select count(*) from matchup"))))))
+      (is (= [{:count 1}] (all-matchups))))))
 
 (deftest same-day-same-game-storage
   (tu/with-test-db
@@ -35,10 +41,8 @@
       ;; this test will fail if you happen to span midnight by an hour
       (store-match local-time)
       (store-match local-time+1h)
-      (is (= [{:count 1}]
-             (query-test-db "select count(*) from matchup")))
-      (is (= [{:count 2}]
-             (query-test-db "select count(*) from odds"))))))
+      (is (= [{:count 1}] (all-matchups)))
+      (is (= [{:count 2}] (all-odds))))))
 
 (deftest same-matchup-diff-day-storage
   (tu/with-test-db
@@ -50,20 +54,16 @@
                          (assoc odds :timestamp (t/instant->sql-timestamp ts))))]
       (store-match local-time)
       (store-match local-time+1d)
-      (is (= [{:count 2}]
-             (query-test-db "select count(*) from matchup")))
-      (is (= [{:count 2}]
-             (query-test-db "select count(*) from odds"))))))
+      (is (= [{:count 2}] (all-matchups)))
+      (is (= [{:count 2}] (all-odds))))))
 
 (deftest basic-storage-via-odds-endpoint
   (tu/with-http-app
     (is (= 200
            (:status (tu/*app* (-> (mock/request :post "/odds")
                                   (mock/json-body (gen-odds-info)))))))
-    (is (= [{:count 1}]
-           (query-test-db "select count(*) from matchup")))
-    (is (= [{:count 1}]
-           (query-test-db "select count(*) from odds")))))
+    (is (= [{:count 1}] (all-matchups)))
+    (is (= [{:count 1}] (all-odds)))))
 
 (deftest malformed-request-body-odds-endpoint
   (tu/with-http-app
