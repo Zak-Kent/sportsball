@@ -14,4 +14,6 @@
         fmt-err (spec/check-odds odds)]
     (if fmt-err
       (rr/bad-request fmt-err)
-      (rr/response odds))))
+      (do
+        (let [resp (st/store-odds odds)]
+          (rr/response resp))))))

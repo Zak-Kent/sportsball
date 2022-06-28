@@ -59,7 +59,11 @@
   (tu/with-http-app
     (is (= 200
            (:status (tu/*app* (-> (mock/request :post "/odds")
-                                  (mock/json-body (gen-odds-info)))))))))
+                                  (mock/json-body (gen-odds-info)))))))
+    (is (= [{:count 1}]
+           (query-test-db "select count(*) from matchup")))
+    (is (= [{:count 1}]
+           (query-test-db "select count(*) from odds")))))
 
 (deftest malformed-request-body-odds-endpoint
   (tu/with-http-app
