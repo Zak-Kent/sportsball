@@ -26,4 +26,6 @@
         fmt-err (spec/check-alert-sub sub)]
     (if fmt-err
       (rr/bad-request fmt-err)
-      (rr/response sub))))
+      (do
+        (st/update-alerts sub)
+        (rr/response sub)))))

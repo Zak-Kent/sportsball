@@ -42,9 +42,9 @@
 (defn check-odds []
   (jdbc/execute! *db* [" SELECT * from odds; "]))
 
-(defn odds->matchup [odds]
-  (let [ts (:timestamp odds)
-        teams (->> (:teams odds)
+(defn game-info->matchup [game-info]
+  (let [ts (:timestamp game-info)
+        teams (->> (:teams game-info)
                      vals
                      (str/join "-"))]
     ;; the rows returned by jdbc are namespaced maps
@@ -54,23 +54,24 @@
   (t/format :iso-local-date
             (t/local-date-time d (t/zone-id))))
 
+(defn get-matchup-date [m]
+  (-> (:matchup/time m) get-local-date))
+
 (defn check-matchup [matchup]
   "Takes an incoming matchup and returns a seq of any existing
    matchups for the same date already in the DB"
-  (let [get-date (fn [m] (-> (:matchup/time m)
-                         get-local-date))
-        db-matchups (sql/query
+  (let [db-matchups (sql/query
                      *db*
                      ["select * from matchup where teams = ?"
                       (:matchup/teams matchup)])
-        in-matchup (get-date matchup)]
-    (filter (fn [m] (= (get-date m) in-matchup)) db-matchups)))
+        in-matchup (get-matchup-date matchup)]
+    (filter (fn [m] (= (get-matchup-date m) in-matchup)) db-matchups)))
 
 (defn store-matchup [odds]
   "Takes an incoming odds bundle decides whether or not to store
    a new matchup. Returns the matchup_id used as a FK in the odds
    table."
-  (let [mup (odds->matchup odds)
+  (let [mup (game-info->matchup odds)
         existing-mup (check-matchup mup)]
     (if (seq existing-mup)
       ;; TODO handle case if there are matching games on the same date
@@ -93,3 +94,11 @@
                   :matchup_id match-id
                   :lines (with-meta lines {:pgtype "jsonb"})}]
     (sql/insert! *db* :odds odds-row)))
+
+(def alert-registry (atom #{}))
+
+(defn update-alerts [alert-req]
+  (let [mu (-> alert-req
+               game-info->matchup
+               (update :matchup/time get-local-date))]
+    (swap! alert-registry conj mu)))

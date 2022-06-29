@@ -91,4 +91,5 @@
   (tu/with-http-app
     (is (= 200
            (:status (tu/*app* (-> (mock/request :post "/alert-sub")
-                                  (mock/json-body (gen-alert-sub)))))))))
+                                  (mock/json-body (gen-alert-sub)))))))
+    (is (= 1 (count @store/alert-registry)))))
