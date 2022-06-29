@@ -70,3 +70,14 @@
 (defn check-odds [odds]
   (when-let [err (valid-odds? odds)]
     (me/humanize err)))
+
+
+;; Alerts
+(def alert-threshold (m/schema [float?]))
+
+(def alert-sub
+  [:map
+   {:closed true}
+   [:teams teams]
+   [:threshold alert-threshold]
+   [:timestamp timestamp]])
