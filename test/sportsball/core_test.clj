@@ -24,6 +24,12 @@
    (-> (mg/generate sbspec/odds-info {:seed seed})
        (update :timestamp t/instant->sql-timestamp))))
 
+(defn gen-alert-sub
+  ([] (gen-alert-sub 5))
+  ([seed]
+   (-> (mg/generate sbspec/alert-sub {:seed seed})
+       (update :timestamp t/instant->sql-timestamp))))
+
 (deftest insert-new-matchup
   (tu/with-test-db
     (let [odds (gen-odds-info)]
@@ -73,3 +79,16 @@
                           (mock/json-body
                            (-> (gen-odds-info)
                                (update :timestamp (constantly nil)))))))))))
+
+(deftest malformed-request-body-alert-sub-endpoint
+  (tu/with-http-app
+    (is (= 400
+           (:status
+            (tu/*app* (-> (mock/request :post "/alert-sub")
+                          (mock/json-body {:not :correct}))))))))
+
+(deftest register-alert-via-alert-sub-endpoint
+  (tu/with-http-app
+    (is (= 200
+           (:status (tu/*app* (-> (mock/request :post "/alert-sub")
+                                  (mock/json-body (gen-alert-sub)))))))))

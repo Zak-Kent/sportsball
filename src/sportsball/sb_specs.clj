@@ -81,3 +81,10 @@
    [:teams teams]
    [:threshold alert-threshold]
    [:timestamp timestamp]])
+
+(def valid-alert-sub?
+  (m/explainer alert-sub))
+
+(defn check-alert-sub [sub]
+  (when-let [err (valid-alert-sub? sub)]
+    (me/humanize err)))
