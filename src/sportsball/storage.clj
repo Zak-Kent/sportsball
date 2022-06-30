@@ -16,6 +16,7 @@
 
 (def ^:dynamic *db* db)
 
+;; TODO: you might eventually want a way to gc old alerts
 (def alert-registry (atom #{}))
 
 (def matchup-table-sql

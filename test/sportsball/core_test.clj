@@ -30,6 +30,10 @@
    (-> (mg/generate sbspec/alert-sub {:seed seed})
        (update :timestamp t/instant->sql-timestamp))))
 
+(defn mock-post [endpoint body]
+  (tu/*app* (-> (mock/request :post endpoint)
+                (mock/json-body body))))
+
 (deftest insert-new-matchup
   (tu/with-test-db
     (let [odds (gen-odds-info)]
@@ -65,33 +69,24 @@
 
 (deftest basic-storage-via-odds-endpoint
   (tu/with-http-app
-    (is (= 200
-           (:status (tu/*app* (-> (mock/request :post "/odds")
-                                  (mock/json-body (gen-odds-info)))))))
+    (is (= 200 (:status (mock-post "/odds" (gen-odds-info)))))
     (is (= [{:count 1}] (all-matchups)))
     (is (= [{:count 1}] (all-odds)))))
 
 (deftest malformed-request-body-odds-endpoint
   (tu/with-http-app
     (is (= 400
-           (:status
-            (tu/*app* (-> (mock/request :post "/odds")
-                          (mock/json-body
-                           (-> (gen-odds-info)
-                               (update :timestamp (constantly nil)))))))))))
+           (:status (mock-post "/odds"
+                     (-> (gen-odds-info)
+                         (update :timestamp (constantly nil)))))))))
 
 (deftest malformed-request-body-alert-sub-endpoint
   (tu/with-http-app
-    (is (= 400
-           (:status
-            (tu/*app* (-> (mock/request :post "/alert-sub")
-                          (mock/json-body {:not :correct}))))))))
+    (is (= 400 (:status (mock-post "/alert-sub" {:not :correct}))))))
 
 (deftest register-alert-via-alert-sub-endpoint
   (tu/with-http-app
-    (is (= 200
-           (:status (tu/*app* (-> (mock/request :post "/alert-sub")
-                                  (mock/json-body (gen-alert-sub)))))))
+    (is (= 200 (:status (mock-post "/alert-sub" (gen-alert-sub)))))
     (is (= 1 (count @store/alert-registry)))))
 
 (deftest alert-triggered-when-odds-bundle-matches-element-in-registry
@@ -99,11 +94,9 @@
     (with-redefs [store/trigger-alert (fn [] (swap! call-count inc))]
       (tu/with-http-app
         (is (= 200
-               (:status (tu/*app* (-> (mock/request :post "/alert-sub")
-                                      (mock/json-body (-> (gen-odds-info)
-                                                          (select-keys [:teams :timestamp])
-                                                          (assoc :threshold 1.0))))))))
-        (is (= 200
-               (:status (tu/*app* (-> (mock/request :post "/odds")
-                                      (mock/json-body (gen-odds-info)))))))
+               (:status (mock-post "/alert-sub"
+                                   (-> (gen-odds-info)
+                                       (select-keys [:teams :timestamp])
+                                       (assoc :threshold 1.0))))))
+        (is (= 200 (:status (mock-post "/odds" (gen-odds-info)))))
         (is (= 1 @call-count))))))
