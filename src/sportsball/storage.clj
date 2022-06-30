@@ -16,6 +16,8 @@
 
 (def ^:dynamic *db* db)
 
+(def alert-registry (atom #{}))
+
 (def matchup-table-sql
   ["create table if not exists matchup (
       matchup_id SERIAL PRIMARY KEY,
@@ -57,6 +59,23 @@
 (defn get-matchup-date [m]
   (-> (:matchup/time m) get-local-date))
 
+(defn trigger-alert []
+  ;; just used in testing via with-redefs for now
+  )
+
+(defn maybe-alert [odds]
+  (let [matchup (-> odds
+                    game-info->matchup
+                    (update :matchup/time get-local-date))]
+    (when (@alert-registry matchup)
+      (trigger-alert))))
+
+(defn update-alerts [alert-req]
+  (let [mu (-> alert-req
+               game-info->matchup
+               (update :matchup/time get-local-date))]
+    (swap! alert-registry conj mu)))
+
 (defn check-matchup [matchup]
   "Takes an incoming matchup and returns a seq of any existing
    matchups for the same date already in the DB"
@@ -93,12 +112,5 @@
                   :time ts
                   :matchup_id match-id
                   :lines (with-meta lines {:pgtype "jsonb"})}]
+    (maybe-alert odds)
     (sql/insert! *db* :odds odds-row)))
-
-(def alert-registry (atom #{}))
-
-(defn update-alerts [alert-req]
-  (let [mu (-> alert-req
-               game-info->matchup
-               (update :matchup/time get-local-date))]
-    (swap! alert-registry conj mu)))

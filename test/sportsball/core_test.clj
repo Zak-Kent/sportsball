@@ -93,3 +93,17 @@
            (:status (tu/*app* (-> (mock/request :post "/alert-sub")
                                   (mock/json-body (gen-alert-sub)))))))
     (is (= 1 (count @store/alert-registry)))))
+
+(deftest alert-triggered-when-odds-bundle-matches-element-in-registry
+  (let [call-count (atom 0)]
+    (with-redefs [store/trigger-alert (fn [] (swap! call-count inc))]
+      (tu/with-http-app
+        (is (= 200
+               (:status (tu/*app* (-> (mock/request :post "/alert-sub")
+                                      (mock/json-body (-> (gen-odds-info)
+                                                          (select-keys [:teams :timestamp])
+                                                          (assoc :threshold 1.0))))))))
+        (is (= 200
+               (:status (tu/*app* (-> (mock/request :post "/odds")
+                                      (mock/json-body (gen-odds-info)))))))
+        (is (= 1 @call-count))))))
