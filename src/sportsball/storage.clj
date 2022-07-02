@@ -17,7 +17,7 @@
 (def ^:dynamic *db* db)
 
 ;; TODO: you might eventually want a way to gc old alerts
-(def alert-registry (atom #{}))
+(def alert-registry (atom {}))
 
 (def matchup-table-sql
   ["create table if not exists matchup (
@@ -60,7 +60,7 @@
 (defn get-matchup-date [m]
   (-> (:matchup/time m) get-local-date))
 
-(defn trigger-alert []
+(defn trigger-alert [threshold]
   ;; just used in testing via with-redefs for now
   )
 
@@ -68,14 +68,15 @@
   (let [matchup (-> odds
                     game-info->matchup
                     (update :matchup/time get-local-date))]
-    (when (@alert-registry matchup)
-      (trigger-alert))))
+    (when-let  [threshold (@alert-registry matchup)]
+      (trigger-alert threshold))))
 
 (defn update-alerts [alert-req]
   (let [mu (-> alert-req
                game-info->matchup
-               (update :matchup/time get-local-date))]
-    (swap! alert-registry conj mu)))
+               (update :matchup/time get-local-date))
+        threshold (:threshold alert-req)]
+    (swap! alert-registry assoc mu threshold)))
 
 (defn check-matchup [matchup]
   "Takes an incoming matchup and returns a seq of any existing

@@ -60,7 +60,7 @@
   [f]
   (binding [*app* sbcore/app-routes]
     ;; atom holds state when tests are evaled multiple times in repl, gross
-    (reset! store/alert-registry #{})
+    (reset! store/alert-registry {})
     (with-test-db
       (f))))
 

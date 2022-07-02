@@ -91,7 +91,7 @@
 
 (deftest alert-triggered-when-odds-bundle-matches-element-in-registry
   (let [call-count (atom 0)]
-    (with-redefs [store/trigger-alert (fn [] (swap! call-count inc))]
+    (with-redefs [store/trigger-alert (fn [_] (swap! call-count inc))]
       (tu/with-http-app
         (is (= 200
                (:status (mock-post "/alert-sub"
