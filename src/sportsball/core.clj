@@ -9,10 +9,10 @@
 (def app-routes
   (ring/ring-handler
    (ring/router
-    [["/odds" {:post    {:summary "Stores an odds bundle."
-                         :handler han/store-odds}}]
-     ["/alert-sub" {:post    {:summary "Creates an alert trigger on a game."
-                              :handler han/register-alert}}]]
+    [["/odds" {:post {:summary "Stores an odds bundle."
+                      :handler han/store-odds}}]
+     ["/alert-sub" {:post {:summary "Creates an alert trigger on a game."
+                           :handler han/register-alert}}]]
     {:data {:muuntaja m/instance
             :middleware [rrmm/format-middleware]}})
    (ring/create-default-handler

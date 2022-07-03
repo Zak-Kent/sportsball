@@ -71,15 +71,18 @@
   (when-let [err (valid-odds? odds)]
     (me/humanize err)))
 
-
 ;; Alerts
-(def alert-threshold (m/schema [float?]))
+(def alert-thresholds
+  (m/schema [:map
+             {:closed true}
+             [:home-threshold {:optional true} int?]
+             [:away-threshold {:optional true} int?]]))
 
 (def alert-sub
   [:map
    {:closed true}
    [:teams teams]
-   [:threshold alert-threshold]
+   [:thresholds alert-thresholds]
    [:timestamp timestamp]])
 
 (def valid-alert-sub?

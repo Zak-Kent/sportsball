@@ -75,7 +75,7 @@
   (let [mu (-> alert-req
                game-info->matchup
                (update :matchup/time get-local-date))
-        threshold (:threshold alert-req)]
+        threshold (:thresholds alert-req)]
     (swap! alert-registry assoc mu threshold)))
 
 (defn check-matchup [matchup]

@@ -97,6 +97,6 @@
                (:status (mock-post "/alert-sub"
                                    (-> (gen-odds-info)
                                        (select-keys [:teams :timestamp])
-                                       (assoc :threshold 1.0))))))
+                                       (assoc :thresholds {:home-threshold -150}))))))
         (is (= 200 (:status (mock-post "/odds" (gen-odds-info)))))
         (is (= 1 @call-count))))))
