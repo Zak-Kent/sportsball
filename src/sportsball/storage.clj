@@ -60,16 +60,28 @@
 (defn get-matchup-date [m]
   (-> (:matchup/time m) get-local-date))
 
-(defn trigger-alert [threshold]
+(defn send-alert [book price]
   ;; just used in testing via with-redefs for now
-  )
+  [book price])
 
-(defn maybe-alert [odds]
+(defn maybe-trigger [{:keys [home-threshold away-threshold]}
+                     [book {:keys [home-odds away-odds]}]]
+  (let [maybe-alert (fn [odds threshold]
+                      (when (and odds threshold)
+                        (when (> odds threshold)
+                          (send-alert book odds))))]
+    (maybe-alert home-odds home-threshold)
+    (maybe-alert away-odds away-threshold)))
+
+(defn odds-alert [odds]
   (let [matchup (-> odds
                     game-info->matchup
-                    (update :matchup/time get-local-date))]
-    (when-let  [threshold (@alert-registry matchup)]
-      (trigger-alert threshold))))
+                    (update :matchup/time get-local-date))
+        current-odds (-> odds
+                         (dissoc :teams :game-score :timestamp)
+                         seq)]
+    (when-let [threshold (@alert-registry matchup)]
+      (dorun (map (partial maybe-trigger threshold) current-odds)))))
 
 (defn update-alerts [alert-req]
   (let [mu (-> alert-req
@@ -114,5 +126,5 @@
                   :time ts
                   :matchup_id match-id
                   :lines (with-meta lines {:pgtype "jsonb"})}]
-    (maybe-alert odds)
+    (odds-alert odds)
     (sql/insert! *db* :odds odds-row)))

@@ -90,13 +90,17 @@
     (is (= 1 (count @store/alert-registry)))))
 
 (deftest alert-triggered-when-odds-bundle-matches-element-in-registry
-  (let [call-count (atom 0)]
-    (with-redefs [store/trigger-alert (fn [_] (swap! call-count inc))]
+  (let [send-results (atom [])
+        og-send-alert store/send-alert]
+    (with-redefs [store/send-alert
+                  (fn [b p] (swap! send-results conj (og-send-alert b p)))]
       (tu/with-http-app
         (is (= 200
-               (:status (mock-post "/alert-sub"
-                                   (-> (gen-odds-info)
-                                       (select-keys [:teams :timestamp])
-                                       (assoc :thresholds {:home-threshold -150}))))))
+               (:status
+                (mock-post "/alert-sub"
+                           (-> (gen-odds-info)
+                               (select-keys [:teams :timestamp])
+                               (assoc :thresholds {:home-threshold 150}))))))
         (is (= 200 (:status (mock-post "/odds" (gen-odds-info)))))
-        (is (= 1 @call-count))))))
+        ;; the betonline odds generated in the test data has the only home-odds better than 150
+        (is (= [[:betonline 399]] @send-results))))))
