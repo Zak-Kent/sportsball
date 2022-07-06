@@ -59,24 +59,40 @@
    :blocks [{:type "header"
 		         :text {:type "plain_text"
 			              :text "Register an alert!"}}
-            {:type "section"
-             :text {:type "mrkdwn"
-                    :text "Pick home team"}
-             :accessory {:action_id "home-team-select"
-                         :type "multi_static_select"
-                         :max_selected_items 1
-                         :placeholder {:type "plain_text"
-                                       :text "Select home team"}
-                         :options (team-options)}}
-            {:type "section"
-             :text {:type "mrkdwn"
-                    :text "Pick away team"}
-             :accessory {:action_id "away-team-select"
-                         :type "multi_static_select"
-                         :max_selected_items 1
-                         :placeholder {:type "plain_text"
-                                       :text "Select away team"}
-                         :options (team-options)}}]})
+            {:type "input"
+             :label {:type "plain_text"
+                     :text "Home team"}
+             :element {:type "static_select"
+                       :placeholder {:type "plain_text"
+                                     :text "Select home team"}
+                       :options (team-options)}}
+            {:type "input"
+             :label {:type "plain_text"
+                     :text "Away team"}
+             :element {:type "static_select"
+                       :placeholder {:type "plain_text"
+                                     :text "Select away team"}
+                       :options (team-options)}}
+            {:type "input"
+             :label {:type "plain_text"
+                     :text "Home threshold"}
+             :hint {:type "plain_text"
+                    :text "Enter notification threshold in American odds"}
+             :element {:type "plain_text_input"
+                       :action_id "home-threshold-select-input"}}
+            {:type "input"
+             :label {:type "plain_text"
+                     :text "Away threshold"}
+             :hint {:type "plain_text"
+                    :text "Enter notification threshold in American odds"}
+             :element {:type "plain_text_input"
+                       :action_id "away-threshold-select-input"}}
+            {:type "actions"
+             :elements [{:type "button"
+                         :text {:type "plain_text"
+                                :text "Click to register alert"}
+                         :value "foo"
+                         :action_id "register-alert"}]}]})
 
 (comment
 
