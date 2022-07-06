@@ -102,5 +102,5 @@
                                (select-keys [:teams :timestamp])
                                (assoc :thresholds {:home-threshold 150}))))))
         (is (= 200 (:status (mock-post "/odds" (gen-odds-info)))))
-        ;; the betonline odds generated in the test data has the only home-odds better than 150
-        (is (= [[:betonline 399]] @send-results))))))
+        ;; the bookmaker odds generated in the test data has the only home-odds better than 150
+        (is (= [[:bookmaker 357]] @send-results))))))

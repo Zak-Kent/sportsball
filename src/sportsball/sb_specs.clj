@@ -17,12 +17,10 @@
                   [:away-odds away-odds]]
                  [:fn (fn [{:keys [:home-odds :away-odds]}]
                         (= (type home-odds) (type away-odds)))]]))
-(def bovada book-odds)
-(def betonline book-odds)
-(def bookmaker book-odds)
-(def heritage book-odds)
-(def intertops book-odds)
-(def youwager book-odds)
+(def books (m/schema
+            [:map-of
+             [:enum :bovada :betonline :bookmaker :heritage :intertops :youwager]
+             book-odds]))
 
 ;; Teams
 (def team-abrv [:enum "ARI" "ATL" "BAL" "BOS" "CHC" "CWS" "CIN" "CLE" "COL"
@@ -56,12 +54,7 @@
                  {:closed true}
                  [:teams teams]
                  [:timestamp timestamp]
-                 [:bovada bovada]
-                 [:betonline betonline]
-                 [:bookmaker bookmaker]
-                 [:heritage heritage]
-                 [:intertops intertops]
-                 [:youwager youwager]
+                 [:books books]
                  [:game-score game-score]]))
 
 (def valid-odds?

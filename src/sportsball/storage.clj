@@ -77,9 +77,7 @@
   (let [matchup (-> odds
                     game-info->matchup
                     (update :matchup/time get-local-date))
-        current-odds (-> odds
-                         (dissoc :teams :game-score :timestamp)
-                         seq)]
+        current-odds (-> odds :books seq)]
     (when-let [threshold (@alert-registry matchup)]
       (dorun (map (partial maybe-trigger threshold) current-odds)))))
 
