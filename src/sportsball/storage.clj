@@ -2,7 +2,9 @@
   (:require [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
             [java-time :as t]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            ;; needed to load json protocol extensions for jdbc-next
+            [sportsball.json :as _]))
 
 (def db {:dbtype "postgresql"
          :user "postgres"

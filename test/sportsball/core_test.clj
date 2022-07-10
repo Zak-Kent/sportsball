@@ -2,7 +2,8 @@
   (:require [clojure.test :refer :all]
             [java-time :as t]
             [sportsball.testutils :as tu]
-            [sportsball.json :as json]
+            ;; needed to load json protocol extensions for jdbc-next
+            [sportsball.json :as _]
             [next.jdbc.sql :as sql]
             [malli.generator :as mg]
             [sportsball.sb-specs :as sbspec]
