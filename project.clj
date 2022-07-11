@@ -10,6 +10,7 @@
                  [metosin/malli "0.8.4"]
                  [metosin/jsonista "0.3.6"]
                  [metosin/reitit "0.5.18"]
+                 [metosin/muuntaja-form "0.6.8"]
                  [ring/ring-jetty-adapter "1.9.5"]
                  [ring/ring-mock "0.4.0"]
                  [clj-http "3.12.3"]]
