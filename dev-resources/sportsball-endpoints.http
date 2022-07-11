@@ -1,0 +1,30 @@
+POST http://localhost:3000/odds
+Content-Type: application/json
+{
+ "teams": { "home-team": "PIT",
+           "away-team":"SF" },
+ "timestamp": "1970-01-01T00:00:04.399Z",
+ "books": {"bookmaker": {"home-odds": -203,
+                         "away-odds": 22},
+           "betonline": {"home-odds": 218,
+                         "away-odds": -297},
+           "intertops": {"home-odds": null,
+                         "away-odds": null},
+           "youwager":  {"home-odds": 323,
+                         "away-odds": -87},
+           "heritage": {"home-odds": -346,
+                        "away-odds": -301},
+           "bovada": {"home-odds": null,
+                      "away-odds": null}},
+ "game-score":{"home-score": 89,"away-score": null}
+}
+
+# alert-sub
+POST http://localhost:3000/alert-sub
+Content-Type: application/json
+{
+ "teams": { "home-team": "PIT",
+           "away-team":"SF" },
+ "timestamp": "1970-01-01T00:00:04.399Z",
+ "thresholds": {"home-threshold": 150}
+}
