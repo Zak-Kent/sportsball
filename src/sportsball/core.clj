@@ -13,7 +13,9 @@
     [["/odds" {:post {:summary "Stores an odds bundle."
                       :handler han/store-odds}}]
      ["/alert-sub" {:post {:summary "Creates an alert trigger on a game."
-                           :handler han/register-alert}}]]
+                           :handler han/register-alert}}]
+     ["/slack-alert-sub" {:post {:summary "Creates an alert trigger on a game via slack msg."
+                                 :handler han/slack-register-alert}}]]
     {:data {:muuntaja (m/create (-> m/default-options
                                     (update :formats
                                             (fn [fmts]
