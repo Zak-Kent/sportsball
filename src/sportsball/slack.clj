@@ -60,33 +60,39 @@
 		         :text {:type "plain_text"
 			              :text "Register an alert!"}}
             {:type "input"
+             :block_id "home-team-select"
              :label {:type "plain_text"
                      :text "Home team"}
              :element {:type "static_select"
                        :placeholder {:type "plain_text"
                                      :text "Select home team"}
-                       :options (team-options)}}
+                       :options (team-options)
+                       :action_id "home-team"}}
             {:type "input"
+             :block_id "away-team-select"
              :label {:type "plain_text"
                      :text "Away team"}
              :element {:type "static_select"
                        :placeholder {:type "plain_text"
                                      :text "Select away team"}
-                       :options (team-options)}}
+                       :options (team-options)
+                       :action_id "away-team"}}
             {:type "input"
+             :block_id "home-threshold-select"
              :label {:type "plain_text"
                      :text "Home threshold"}
              :hint {:type "plain_text"
                     :text "Enter notification threshold in American odds"}
              :element {:type "plain_text_input"
-                       :action_id "home-threshold-select-input"}}
+                       :action_id "home-threshold"}}
             {:type "input"
+             :block_id "away-threshold-select"
              :label {:type "plain_text"
                      :text "Away threshold"}
              :hint {:type "plain_text"
                     :text "Enter notification threshold in American odds"}
              :element {:type "plain_text_input"
-                       :action_id "away-threshold-select-input"}}
+                       :action_id "away-threshold"}}
             {:type "actions"
              :elements [{:type "button"
                          :text {:type "plain_text"
