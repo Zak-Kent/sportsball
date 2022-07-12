@@ -68,8 +68,8 @@
 (def alert-thresholds
   (m/schema [:map
              {:closed true}
-             [:home-threshold {:optional true} int?]
-             [:away-threshold {:optional true} int?]]))
+             [:home-threshold {:optional true} [:maybe int?]]
+             [:away-threshold {:optional true} [:maybe int?]]]))
 
 (def alert-sub
   [:map

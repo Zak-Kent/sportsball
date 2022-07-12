@@ -49,7 +49,8 @@
                       select-key
                       threshold-key
                       :value)]
-    {threshold-key (Integer/parseInt threshold)}))
+    {threshold-key (when threshold
+                     (Integer/parseInt threshold))}))
 
 (defn slack-register-alert [body]
   (let [form-vals (-> :body-params
