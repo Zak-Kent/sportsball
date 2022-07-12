@@ -10,18 +10,25 @@
 (def app-routes
   (ring/ring-handler
    (ring/router
-    [["/odds" {:post {:summary "Stores an odds bundle."
-                      :handler han/store-odds}}]
-     ["/alert-sub" {:post {:summary "Creates an alert trigger on a game."
-                           :handler han/register-alert}}]
-     ["/slack-alert-sub" {:post {:summary "Creates an alert trigger on a game via slack msg."
-                                 :handler han/slack-register-alert}}]]
-    {:data {:muuntaja (m/create (-> m/default-options
-                                    (update :formats
-                                            (fn [fmts]
-                                              (assoc fmts
-                                                     "application/x-www-form-urlencoded"
-                                                     mform/format)))))
+    [["/odds"
+      {:post {:summary "Stores an odds bundle."
+              :handler han/store-odds}}]
+     ["/alert-sub"
+      {:post {:summary "Creates an alert trigger on a game."
+              :handler han/register-alert}}]
+     ["/slack-alert-sub"
+      {:post {:summary "Creates an alert trigger on a game via slack msg."
+              :handler han/slack-register-alert}}]
+     ["/slack-send-alert-msg"
+      {:post {:summary "Sends a slack msg with an alert registration form"
+              :handler han/slack-send-alert-register-msg}}]]
+    {:data {:muuntaja
+            (m/create (-> m/default-options
+                          (update :formats
+                                  (fn [fmts]
+                                    (assoc fmts
+                                           "application/x-www-form-urlencoded"
+                                           mform/format)))))
             :middleware [rrmm/format-middleware]}})
    (ring/create-default-handler
     {:not-found (constantly {:status 404 :body "Not found, where did it go?"})})))

@@ -4,15 +4,20 @@
             [clojure.string :as str]
             [sportsball.sb-specs :as specs]))
 
-(def slack-url
-  (-> (System/getenv "SPORTSBALL_SLACK_POST_URL_FILE")
+(defn env-var-set? [f env-var]
+  (if (nil? f)
+    (throw (Exception. (format "%s env var not set, see slack.clj" env-var)))
+    f))
+
+(defn get-env-var [env-var]
+  (-> (System/getenv env-var)
+      (env-var-set? env-var)
       slurp
       str/trim))
 
-(def slack-bot-auth-token
-  (-> (System/getenv "SPORTSBALL_SLACK_BOT_TOKEN")
-      slurp
-      str/trim))
+(def slack-url (get-env-var "SPORTSBALL_SLACK_POST_URL_FILE"))
+
+(def slack-bot-auth-token (get-env-var "SPORTSBALL_SLACK_BOT_TOKEN"))
 
 (defn get-channel-id [channel]
   (let [channels (-> (client/get "https://slack.com/api/conversations.list"
@@ -53,7 +58,7 @@
          (map make-option)
          (into []))))
 
-(defn slack-alert-registration-msg []
+(def slack-alert-registration-msg
   {:channel sports-channel-id
    :text ""
    :blocks [{:type "header"
@@ -100,9 +105,10 @@
                          :value "foo"
                          :action_id "register-alert"}]}]})
 
+
 (comment
 
-  (slack-post-msg (slack-alert-registration-msg))
+  (slack-post-msg slack-alert-registration-msg)
 
   (slack-post-simple-msg {:text "hello there"})
 

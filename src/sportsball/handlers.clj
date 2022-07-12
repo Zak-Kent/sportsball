@@ -3,6 +3,7 @@
    [ring.util.response :as rr]
    [sportsball.storage :as st]
    [sportsball.sb-specs :as spec]
+   [sportsball.slack :as slack]
    [java-time :as t]
    [jsonista.core :as json]))
 
@@ -68,3 +69,12 @@
       (do
         (st/update-alerts alert-sub)
         (rr/response {:ok 0})))))
+
+(defn slack-send-alert-register-msg [body]
+  (let [cmd (-> :body-params
+                body
+                :command)]
+    (if (= "/register-game-alert" cmd)
+      (rr/response slack/slack-alert-registration-msg)
+      (rr/bad-request {:error "unexpected command"}))))
+
