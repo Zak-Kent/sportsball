@@ -53,12 +53,13 @@
                      (Integer/parseInt threshold))}))
 
 (defn slack-register-alert [body]
-  (let [form-vals (-> :body-params
-                      body
-                      :payload
-                      (json/read-value json/keyword-keys-object-mapper)
-                      :state
-                      :values)
+  (let [payload (-> :body-params
+                    body
+                    :payload
+                    (json/read-value json/keyword-keys-object-mapper))
+        form-vals (-> payload :state :values)
+        register-button? (= "register-alert"
+                            (-> payload :actions first :action_id))
         teams (map (partial get-team form-vals) ["home" "away"])
         thresholds (map (partial get-threshold form-vals) ["home" "away"])
         alert-sub (-> {:teams (apply merge teams)
@@ -68,7 +69,9 @@
     (if fmt-err
       (rr/bad-request fmt-err)
       (do
-        (st/update-alerts alert-sub)
+        ;; only register the alert when the user presses the button in slack
+        (when register-button?
+          (st/update-alerts alert-sub))
         (rr/response {:ok 0})))))
 
 (defn slack-send-alert-register-msg [body]
