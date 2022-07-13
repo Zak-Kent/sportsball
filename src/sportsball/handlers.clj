@@ -53,8 +53,8 @@
                      (Integer/parseInt threshold))}))
 
 (defn slack-register-alert [body]
-  (let [payload (-> :body-params
-                    body
+  (let [payload (-> body
+                    :body-params
                     :payload
                     (json/read-value json/keyword-keys-object-mapper))
         form-vals (-> payload :state :values)

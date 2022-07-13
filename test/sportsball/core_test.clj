@@ -8,6 +8,7 @@
             [malli.generator :as mg]
             [sportsball.sb-specs :as sbspec]
             [sportsball.storage :as store]
+            [sportsball.slack-testutils :as slack-utils]
             [ring.mock.request :as mock]))
 
 (defn query-test-db [query]
@@ -31,9 +32,15 @@
    (-> (mg/generate sbspec/alert-sub {:seed seed})
        (update :timestamp t/instant->sql-timestamp))))
 
-(defn mock-post [endpoint body]
-  (tu/*app* (-> (mock/request :post endpoint)
-                (mock/json-body body))))
+(defn mock-post
+  ([endpoint body]
+   (mock-post endpoint body :json))
+  ([endpoint body typ]
+   (let [body-fn (case typ
+                   :json mock/json-body
+                   :urlencoded mock/body)]
+     (tu/*app* (-> (mock/request :post endpoint)
+                   (body-fn body))))))
 
 (deftest insert-new-matchup
   (tu/with-test-db
@@ -105,3 +112,20 @@
         (is (= 200 (:status (mock-post "/odds" (gen-odds-info)))))
         ;; the bookmaker odds generated in the test data has the only home-odds better than 150
         (is (= [[:bookmaker 357]] @send-results))))))
+
+(deftest register-alert-via-slack-form
+  (tu/with-http-app
+    (is (= 200 (:status
+                (mock-post "/slack-alert-sub"
+                           (slack-utils/mock-slack-alert-action-msg :register-button)
+                           :urlencoded))))
+    (is (= 1 (count @store/alert-registry)))))
+
+(deftest slack-team-select-action-does-not-register-alert
+  (tu/with-http-app
+    (is (= 200 (:status
+                (mock-post "/slack-alert-sub"
+                           (slack-utils/mock-slack-alert-action-msg :team-select)
+                           :urlencoded))))
+    (is (= 0 (count @store/alert-registry)))))
+
