@@ -40,14 +40,17 @@
                 :content-type :json
                 :accept :json}))
 
-(defn slack-post-msg [body]
-  "Post an interactive message in the sports channel"
-  (client/post "https://slack.com/api/chat.postMessage"
-               {:body (json/write-value-as-string body)
-                :headers {}
-                :content-type :json
-                :accept :json
-                :oauth-token slack-bot-auth-token}))
+(defn slack-post-msg
+  ([body]
+   (slack-post-msg "https://slack.com/api/chat.postMessage" body))
+  ([url body]
+   "Post an interactive message in the sports channel"
+   (client/post url
+                {:body (json/write-value-as-string body)
+                 :headers {}
+                 :content-type :json
+                 :accept :json
+                 :oauth-token slack-bot-auth-token})))
 
 (defn team-options []
   "Helper func that makes the options vector for the team selection drop down"
@@ -57,6 +60,9 @@
          rest
          (map make-option)
          (into []))))
+
+(defn slack-send-alert-ack-msg [url]
+  (slack-post-msg url {:text "Alert registered"}))
 
 (def slack-alert-registration-msg
   {:channel sports-channel-id

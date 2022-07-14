@@ -9,7 +9,8 @@
             [sportsball.sb-specs :as sbspec]
             [sportsball.storage :as store]
             [sportsball.slack-testutils :as slack-utils]
-            [ring.mock.request :as mock]))
+            [ring.mock.request :as mock]
+            [sportsball.slack :as slack]))
 
 (defn query-test-db [query]
   (sql/query store/*db* [query]))
@@ -114,12 +115,14 @@
         (is (= [[:bookmaker 357]] @send-results))))))
 
 (deftest register-alert-via-slack-form
-  (tu/with-http-app
-    (is (= 200 (:status
-                (mock-post "/slack-alert-sub"
-                           (slack-utils/mock-slack-alert-action-msg :register-button)
-                           :urlencoded))))
-    (is (= 1 (count @store/alert-registry)))))
+  ;; can't send the slack alert reg ack msg in tests because response_url doesn't really exist
+  (with-redefs [slack/slack-send-alert-ack-msg (fn [x] :no-op)]
+    (tu/with-http-app
+      (is (= 200 (:status
+                  (mock-post "/slack-alert-sub"
+                             (slack-utils/mock-slack-alert-action-msg :register-button)
+                             :urlencoded))))
+      (is (= 1 (count @store/alert-registry))))))
 
 (deftest slack-team-select-action-does-not-register-alert
   (tu/with-http-app
