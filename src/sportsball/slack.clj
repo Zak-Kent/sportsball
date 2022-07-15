@@ -61,8 +61,14 @@
          (map make-option)
          (into []))))
 
-(defn send-alert-ack-msg [url]
-  (post-msg url {:text "Alert registered"}))
+(defn alert-sub->alert-reg-msg
+  [{{home :home-team away :away-team} :teams
+    {home-thres :home-threshold
+     away-thres :away-threshold} :thresholds}]
+  (let [game (format "%s-%s" home away)]
+    (format "Alert registered for the following game: %s
+             Alert thresholds: %s, %s"
+            game home-thres away-thres)))
 
 (def alert-registration-msg
   {:channel sports-channel-id

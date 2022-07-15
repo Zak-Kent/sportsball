@@ -66,7 +66,9 @@
       (do
         ;; only register the alert when the user presses the button in slack
         (st/update-alerts alert-sub)
-        (slack/send-alert-ack-msg response_url)
+        (slack/post-msg
+         response_url
+         {:text (slack/alert-sub->alert-reg-msg alert-sub)})
         (rr/response {:ok 0})))))
 
 (defn slack-register-alert [body]
