@@ -31,7 +31,7 @@
 
 (def sports-channel-id (get-channel-id "sports"))
 
-(defn slack-post-simple-msg [msg]
+(defn post-simple-msg [msg]
   "Post a messge using the pre generated slack url. This can only be used
    for simple text messages and can't be used for interactive messages"
   (client/post slack-url
@@ -40,9 +40,9 @@
                 :content-type :json
                 :accept :json}))
 
-(defn slack-post-msg
+(defn post-msg
   ([body]
-   (slack-post-msg "https://slack.com/api/chat.postMessage" body))
+   (post-msg "https://slack.com/api/chat.postMessage" body))
   ([url body]
    "Post an interactive message in the sports channel"
    (client/post url
@@ -61,10 +61,10 @@
          (map make-option)
          (into []))))
 
-(defn slack-send-alert-ack-msg [url]
-  (slack-post-msg url {:text "Alert registered"}))
+(defn send-alert-ack-msg [url]
+  (post-msg url {:text "Alert registered"}))
 
-(def slack-alert-registration-msg
+(def alert-registration-msg
   {:channel sports-channel-id
    :text ""
    :blocks [{:type "header"
@@ -114,8 +114,8 @@
 
 (comment
 
-  (slack-post-msg slack-alert-registration-msg)
+  (post-msg alert-registration-msg)
 
-  (slack-post-simple-msg {:text "hello there"})
+  (post-simple-msg {:text "hello there"})
 
   )

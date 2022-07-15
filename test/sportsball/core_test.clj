@@ -116,7 +116,7 @@
 
 (deftest register-alert-via-slack-form
   ;; can't send the slack alert reg ack msg in tests because response_url doesn't really exist
-  (with-redefs [slack/slack-send-alert-ack-msg (fn [x] :no-op)]
+  (with-redefs [slack/send-alert-ack-msg (fn [x] :no-op)]
     (tu/with-http-app
       (is (= 200 (:status
                   (mock-post "/slack-alert-sub"

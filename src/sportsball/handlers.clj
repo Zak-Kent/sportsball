@@ -66,7 +66,7 @@
       (do
         ;; only register the alert when the user presses the button in slack
         (st/update-alerts alert-sub)
-        (slack/slack-send-alert-ack-msg response_url)
+        (slack/send-alert-ack-msg response_url)
         (rr/response {:ok 0})))))
 
 (defn slack-register-alert [body]
@@ -86,6 +86,6 @@
                 body
                 :command)]
     (if (= "/register-game-alert" cmd)
-      (rr/response slack/slack-alert-registration-msg)
+      (rr/response slack/alert-registration-msg)
       (rr/bad-request {:error "unexpected command"}))))
 
