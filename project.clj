@@ -14,6 +14,7 @@
                  [ring/ring-jetty-adapter "1.9.5"]
                  [ring/ring-mock "0.4.0"]
                  [org.seleniumhq.selenium/selenium-java "4.3.0"]
+                 [hickory "0.7.1"]
                  [clj-http "3.12.3"]]
   :main ^:skip-aot sportsball.core
   :target-path "target/%s"
