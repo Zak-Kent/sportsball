@@ -15,6 +15,7 @@
                  [ring/ring-mock "0.4.0"]
                  [org.seleniumhq.selenium/selenium-java "4.3.0"]
                  [hickory "0.7.1"]
+                 [org.flatland/ordered "1.15.10"]
                  [clj-http "3.12.3"]]
   :main ^:skip-aot sportsball.core
   :target-path "target/%s"

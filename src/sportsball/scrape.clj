@@ -3,7 +3,8 @@
    [java-time :as t]
    [hickory.core :as h]
    [hickory.select :as hs]
-   [clojure.string :as str])
+   [clojure.string :as str]
+   [flatland.ordered.set :refer [ordered-set]])
   (:import
    (java.time Duration)
    (org.openqa.selenium WebDriver)
@@ -35,6 +36,69 @@
                              #(str/starts-with? % prefix)
                              (parse-classes x))))))
 
+
+;; sportsbookreview specific scraping funcs
+(defn get-teams [teams]
+  (let [extract (fn [t] (-> t :content first :content first))]
+    (->> teams
+         (map extract)
+         (apply (fn [away home]
+                  {:away-team away
+                   :home-team home})))))
+
+(defn get-books [books]
+  (->> books
+       (map :attrs)
+       (map :alt)
+       (map (fn [s] (-> s
+                        (str/split #" ")
+                        first)))))
+
+(defn get-book-odds [[away-odds home-odds]]
+  (letfn [(extract [odds]
+            (-> odds
+                :content
+                first
+                :content
+                first
+                :content
+                first))]
+    {:home-odds (extract home-odds)
+     :away-odds (extract away-odds)}))
+
+(defn sportsbookreview->odds-infos
+  "Takes html, uses hickory to parse the html into Clojure data, then extracts
+   the odds for the games found on a sportsbookreview live MLB odds page."
+  [html]
+  (let [page (-> html h/parse h/as-hickory)
+        game-row (hs/select (hs/descendant
+                             (class-prefix-selector "eventMarketGridContainer"))
+                            page)
+        teams (->> page
+                   (hs/select (hs/descendant
+                               (class-prefix-selector "participants")
+                               (class-prefix-selector "gradientContainer")))
+                   (partition 2)
+                   (map get-teams))
+        books (->> page
+                   (hs/select (hs/descendant
+                               (class-prefix-selector "columnsContainer")
+                               (hs/attr :alt)))
+                   get-books
+                   (apply ordered-set))
+        book-odds (->> game-row
+                       (map #(hs/select
+                              (hs/descendant
+                               (class-prefix-selector "columnsContainer")
+                               (class-prefix-selector "oddsNumber")) %))
+                       (map #(partition 2 %))
+                       (map #(map get-book-odds %))
+                       (map #(zipmap (map keyword books) %)))]
+    (map (fn [[teams odds]]
+           {:books odds
+            :teams teams})
+         (map vector teams book-odds))))
+
 (comment
   (let [url "https://www.sportsbookreview.com/betting-odds/mlb-baseball/money-line/"
         game-url "https://www.sportsbookreview.com/betting-odds/mlb-baseball/4677364/odds/"
@@ -45,15 +109,7 @@
   )
 
 (comment
-
-  (let [f (slurp "game-scrape.html")
-        page-tree (-> f
-                      h/parse
-                      h/as-hickory)]
-
-    (count (hs/select (hs/descendant
-                       (class-prefix-selector "sportbooks-1K"))
-                      page-tree))
-    )
+  (let [f (slurp "game-scrape.html")]
+    (clojure.pprint/pprint (sportsbookreview->odds-infos f)))
 
   )
