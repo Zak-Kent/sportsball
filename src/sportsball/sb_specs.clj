@@ -19,14 +19,15 @@
                         (= (type home-odds) (type away-odds)))]]))
 (def books (m/schema
             [:map-of
-             [:enum :bovada :betonline :bookmaker :heritage :intertops :youwager]
+             [:enum :bovada :betonline :bookmaker :heritage :intertops :youwager
+                    :Bet365 :Unibet :Betway :BetMGM :888sport]
              book-odds]))
 
 ;; Teams
 (def team-abrv [:enum "ARI" "ATL" "BAL" "BOS" "CHC" "CWS" "CIN" "CLE" "COL"
-                "DET" "FLA" "HOU" "KAN" "LAA" "LAD" "MIL" "MIN" "NYM" "NYY"
-                "OAK" "PHI" "PIT" "SD" "SF" "SEA" "STL" "TB" "TEX" "TOR"
-                "WAS"])
+                "DET" "FLA" "HOU" "KAN" "KC" "LAA" "LAD" "MIA" "MIL" "MIN" "NYM"
+                "NYY" "OAK" "PHI" "PIT" "SD" "SF" "SEA" "STL" "TB" "TEX" "TOR"
+                "WAS" "WSH"])
 (def home-team (m/schema team-abrv))
 (def away-team (m/schema team-abrv))
 (def teams (m/schema
@@ -43,10 +44,10 @@
 (def home-score score)
 (def away-score score)
 (def game-score (m/schema
-                 [:map
-                  {:closed true}
-                  [:home-score home-score]
-                  [:away-score away-score]]))
+                 [:maybe [:map
+                          {:closed true}
+                          [:home-score home-score]
+                          [:away-score away-score]]]))
 
 (def timestamp (m/schema [inst?]))
 (def odds-info (m/schema

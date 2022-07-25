@@ -4,6 +4,7 @@
    [hickory.core :as h]
    [hickory.select :as hs]
    [clojure.string :as str]
+   [sportsball.sb-specs :as specs]
    [flatland.ordered.set :refer [ordered-set]])
   (:import
    (java.time Duration)
@@ -18,6 +19,8 @@
     (try
       (.get driver url)
       (let [html (.getPageSource driver)]
+        ;; need to wait for page to load, investigate why WebDriverWait isn't waiting
+        (Thread/sleep 20000)
         (extract-fn html))
       (catch Exception e
         (str "caught exception: " (.getMessage e)))
@@ -71,9 +74,13 @@
                 :content
                 first
                 :content
-                first))]
-    {:home-odds (extract home-odds)
-     :away-odds (extract away-odds)}))
+                first))
+          (d->nil [odd]
+            (if (= odd "-")
+              nil
+              (str->int odd)))]
+    {:home-odds (d->nil (extract home-odds))
+     :away-odds (d->nil (extract away-odds))}))
 
 (defn get-game-scores [page]
   (let [scores (hs/select (hs/descendant
@@ -120,29 +127,27 @@
         ;; add nils for games which haven't yet started
         scores-w-nils (concat
                        scores
-                       (repeat (- (count teams) (count scores)) nil))]
+                       (repeat (- (count teams) (count scores)) nil))
+        scrape-time (t/instant)]
 
     (assert (= (count teams) (count book-odds))
             "Number of teams and book odds didn't match!")
-
     (map (fn [[t o s]]
            {:books o
             :teams t
-            :game-score s})
+            :game-score s
+            :timestamp scrape-time})
          (map vector teams book-odds scores-w-nils))))
 
-(comment
+(defn scrape-sportsbookreview []
   (let [url "https://www.sportsbookreview.com/betting-odds/mlb-baseball/money-line/"
-        game-url "https://www.sportsbookreview.com/betting-odds/mlb-baseball/4677364/odds/"
-        extract-func (fn [html] (spit "live-game-scrape.html" html))]
-
-    (html->data url extract-func))
-
-  )
-
-(comment
-  (let [f (slurp "live-game-scrape.html")]
-
-    (clojure.pprint/pprint (sportsbookreview->odds-infos f)))
-
-  )
+        odds-infos (-> url
+                       (html->data
+                        sportsbookreview->odds-infos))]
+    (let [validation-errs  (filter (complement nil?)
+                                    (map specs/check-odds odds-infos))]
+      (if (seq validation-errs)
+        (do
+          ;; TODO: add logging
+          (clojure.pprint/pprint validation-errs))
+        odds-infos))))
