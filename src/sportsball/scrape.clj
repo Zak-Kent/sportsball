@@ -95,6 +95,17 @@
                          build-game-score))]
     (map get-score scores)))
 
+(defn sbr-drop-nil-odds [{:keys [books] :as odds-info}]
+  (letfn [(drop-nil-odds [[book odds]]
+            (let [odds-vals (vals odds)]
+              (if (some nil? odds-vals)
+                nil
+                {book odds})))]
+    (->> books
+         (map drop-nil-odds)
+         (apply merge)
+         (assoc odds-info :books))))
+
 (defn sportsbookreview->odds-infos
   "Takes html, uses hickory to parse the html into Clojure data, then extracts
    the odds for the games found on a sportsbookreview live MLB odds page."
@@ -128,16 +139,21 @@
         scores-w-nils (concat
                        scores
                        (repeat (- (count teams) (count scores)) nil))
-        scrape-time (t/instant)]
+        scrape-time (t/instant)
+        odds-infos (map (fn [[t o s]]
+                          {:books o
+                           :teams t
+                           :game-score s
+                           :timestamp scrape-time})
+                        (map vector teams book-odds scores-w-nils))]
 
     (assert (= (count teams) (count book-odds))
             "Number of teams and book odds didn't match!")
-    (map (fn [[t o s]]
-           {:books o
-            :teams t
-            :game-score s
-            :timestamp scrape-time})
-         (map vector teams book-odds scores-w-nils))))
+
+    (->> odds-infos
+         (map sbr-drop-nil-odds)
+         (filter (fn [{:keys [books]}]
+                   ((complement nil?) books))))))
 
 (defn scrape-sportsbookreview []
   (let [url "https://www.sportsbookreview.com/betting-odds/mlb-baseball/money-line/"
