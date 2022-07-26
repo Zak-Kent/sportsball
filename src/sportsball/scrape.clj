@@ -50,7 +50,7 @@
 
 ;; sportsbookreview specific scraping funcs
 
-(defn get-teams [teams]
+(defn sbr-get-teams [teams]
   (let [extract (fn [t] (-> t :content first :content first))]
     (->> teams
          (map extract)
@@ -58,7 +58,7 @@
                   {:away-team away
                    :home-team home})))))
 
-(defn get-books [books]
+(defn sbr-get-books [books]
   (->> books
        (map :attrs)
        (map :alt)
@@ -66,7 +66,7 @@
                         (str/split #" ")
                         first)))))
 
-(defn get-book-odds [[away-odds home-odds]]
+(defn sbr-get-book-odds [[away-odds home-odds]]
   (letfn [(extract [odds]
             (-> odds
                 :content
@@ -82,7 +82,7 @@
     {:home-odds (d->nil (extract home-odds))
      :away-odds (d->nil (extract away-odds))}))
 
-(defn get-game-scores [page]
+(defn sbr-get-game-scores [page]
   (let [scores (hs/select (hs/descendant
                            (class-prefix-selector "finalScore"))
                           page)
@@ -108,12 +108,12 @@
                                (class-prefix-selector "participants")
                                (class-prefix-selector "gradientContainer")))
                    (partition 2)
-                   (map get-teams))
+                   (map sbr-get-teams))
         books (->> page
                    (hs/select (hs/descendant
                                (class-prefix-selector "columnsContainer")
                                (hs/attr :alt)))
-                   get-books
+                   sbr-get-books
                    (apply ordered-set))
         book-odds (->> game-row
                        (map #(hs/select
@@ -121,9 +121,9 @@
                                (class-prefix-selector "columnsContainer")
                                (class-prefix-selector "oddsNumber")) %))
                        (map #(partition 2 %))
-                       (map #(map get-book-odds %))
+                       (map #(map sbr-get-book-odds %))
                        (map #(zipmap (map keyword books) %)))
-        scores (get-game-scores page)
+        scores (sbr-get-game-scores page)
         ;; add nils for games which haven't yet started
         scores-w-nils (concat
                        scores

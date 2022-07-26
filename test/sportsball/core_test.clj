@@ -111,8 +111,8 @@
                                (select-keys [:teams :timestamp])
                                (assoc :thresholds {:home-threshold 150}))))))
         (is (= 200 (:status (mock-post "/odds" (gen-odds-info)))))
-        ;; the bookmaker odds generated in the test data has the only home-odds better than 150
-        (is (= [[:bookmaker 357]] @send-results))))))
+        ;; the intertops odds generated in the test data has the only home-odds better than 150
+        (is (= [[:intertops 357]] @send-results))))))
 
 (deftest register-alert-via-slack-form
   ;; can't send the slack alert reg ack msg in tests because response_url doesn't really exist
