@@ -4,7 +4,9 @@
             [ring.adapter.jetty :as jetty]
             [reitit.ring.middleware.muuntaja :as rrmm]
             [muuntaja.core :as m]
-            [muuntaja.format.form :as mform])
+            [muuntaja.format.form :as mform]
+            [sportsball.scrape :as scrape]
+            [overtone.at-at :as at-at])
   (:gen-class))
 
 (def app-routes
@@ -35,5 +37,14 @@
 
 (defn -main
   [& args]
-  (jetty/run-jetty #'app-routes {:port 3000
-                                 :join? false}))
+  (try
+    (scrape/schedule-scrape
+     scrape/scrape-sportsbookreview
+     ;; 5 mins in ms
+     (* 1000 60 5))
+
+    (jetty/run-jetty #'app-routes {:port 3000
+                                   :join? false})
+
+    (finally
+      (at-at/stop-and-reset-pool! scrape/scrape-pool))))

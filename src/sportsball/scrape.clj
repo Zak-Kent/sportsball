@@ -5,7 +5,8 @@
    [hickory.select :as hs]
    [clojure.string :as str]
    [sportsball.sb-specs :as specs]
-   [flatland.ordered.set :refer [ordered-set]])
+   [flatland.ordered.set :refer [ordered-set]]
+   [overtone.at-at :as at-at])
   (:import
    (java.time Duration)
    (org.openqa.selenium WebDriver)
@@ -167,3 +168,11 @@
           ;; TODO: add logging
           (clojure.pprint/pprint validation-errs))
         odds-infos))))
+
+
+;; scheduling
+
+(def scrape-pool (at-at/mk-pool))
+
+(defn schedule-scrape [scrape-fn interval]
+  (at-at/interspaced interval scrape-fn scrape-pool))
