@@ -1,11 +1,13 @@
 (ns sportsball.scraping-test
   (:require
    [clojure.test :refer :all]
-   [sportsball.scrape :as sc]))
+   [sportsball.scrape :as sc]
+   [sportsball.storage :as store]
+   [sportsball.testutils :as tu]))
 
 (deftest scrape-pulls-odds-infos
-  (let [page-html (slurp "dev-resources/live-game-scrape.html")
-        odds-infos (sc/sportsbookreview->odds-infos page-html)]
+  (let [odds-infos (-> (slurp "dev-resources/live-game-scrape.html")
+                       sc/sportsbookreview->odds-infos)]
 
     ;; 21 games are present in page but only 12 have valid odds-info
     ;; information the rest are filtered out during scraping
@@ -20,3 +22,15 @@
                                   flatten)))
                       flatten
                       (not-any? nil?)))))))
+
+(deftest scrape-sportsbookreview-stores-odds-info-bundles-in-db
+  (tu/with-test-db
+    (let [odds-infos (-> (slurp "dev-resources/live-game-scrape.html")
+                         sc/sportsbookreview->odds-infos)]
+      (with-redefs [sc/html->data (fn [_ _] odds-infos)]
+
+        ;; trigger scrape, this will cause odds-infos above to be stored
+        (sc/scrape-sportsbookreview)
+
+        (is (= [{:count 12}] (tu/all-odds)))
+        (is (= [{:count 12}] (tu/all-matchups)))))))

@@ -2,6 +2,7 @@
   (:require [clojure.string :as str]
             [malli.generator :as mg]
             [next.jdbc :as jdbc]
+            [next.jdbc.sql :as sql]
             [java-time :as t]
             [jsonista.core :as j]
             [malli.core :as m]
@@ -67,3 +68,12 @@
 (defmacro with-http-app
   [& body]
   `(call-with-http-app (fn [] ~@body)))
+
+(defn query-test-db [query]
+  (sql/query store/*db* [query]))
+
+(defn all-matchups []
+  (query-test-db "select count(*) from matchup"))
+
+(defn all-odds []
+  (query-test-db "select count(*) from odds"))

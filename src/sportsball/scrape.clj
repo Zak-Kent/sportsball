@@ -5,6 +5,7 @@
    [hickory.select :as hs]
    [clojure.string :as str]
    [sportsball.sb-specs :as specs]
+   [sportsball.storage :as store]
    [flatland.ordered.set :refer [ordered-set]]
    [overtone.at-at :as at-at])
   (:import
@@ -140,7 +141,7 @@
         scores-w-nils (concat
                        scores
                        (repeat (- (count teams) (count scores)) nil))
-        scrape-time (t/instant)
+        scrape-time (t/instant->sql-timestamp (t/instant))
         odds-infos (map (fn [[t o s]]
                           {:books o
                            :teams t
@@ -167,7 +168,7 @@
         (do
           ;; TODO: add logging
           (clojure.pprint/pprint validation-errs))
-        odds-infos))))
+        (dorun (map store/store-odds odds-infos))))))
 
 
 ;; scheduling

@@ -4,22 +4,12 @@
             [sportsball.testutils :as tu]
             ;; needed to load json protocol extensions for jdbc-next
             [sportsball.json :as _]
-            [next.jdbc.sql :as sql]
             [malli.generator :as mg]
             [sportsball.sb-specs :as sbspec]
             [sportsball.storage :as store]
             [sportsball.slack-testutils :as slack-utils]
             [ring.mock.request :as mock]
             [sportsball.slack :as slack]))
-
-(defn query-test-db [query]
-  (sql/query store/*db* [query]))
-
-(defn all-matchups []
-  (query-test-db "select count(*) from matchup"))
-
-(defn all-odds []
-  (query-test-db "select count(*) from odds"))
 
 (defn gen-odds-info
   ([] (gen-odds-info 42))
@@ -47,7 +37,7 @@
   (tu/with-test-db
     (let [odds (gen-odds-info)]
       (store/store-matchup odds)
-      (is (= [{:count 1}] (all-matchups))))))
+      (is (= [{:count 1}] (tu/all-matchups))))))
 
 (deftest same-day-same-game-storage
   (tu/with-test-db
@@ -60,8 +50,8 @@
       ;; this test will fail if you happen to span midnight by an hour
       (store-match local-time)
       (store-match local-time+1h)
-      (is (= [{:count 1}] (all-matchups)))
-      (is (= [{:count 2}] (all-odds))))))
+      (is (= [{:count 1}] (tu/all-matchups)))
+      (is (= [{:count 2}] (tu/all-odds))))))
 
 (deftest same-matchup-diff-day-storage
   (tu/with-test-db
@@ -73,14 +63,14 @@
                          (assoc odds :timestamp (t/instant->sql-timestamp ts))))]
       (store-match local-time)
       (store-match local-time+1d)
-      (is (= [{:count 2}] (all-matchups)))
-      (is (= [{:count 2}] (all-odds))))))
+      (is (= [{:count 2}] (tu/all-matchups)))
+      (is (= [{:count 2}] (tu/all-odds))))))
 
 (deftest basic-storage-via-odds-endpoint
   (tu/with-http-app
     (is (= 200 (:status (mock-post "/odds" (gen-odds-info)))))
-    (is (= [{:count 1}] (all-matchups)))
-    (is (= [{:count 1}] (all-odds)))))
+    (is (= [{:count 1}] (tu/all-matchups)))
+    (is (= [{:count 1}] (tu/all-odds)))))
 
 (deftest malformed-request-body-odds-endpoint
   (tu/with-http-app
