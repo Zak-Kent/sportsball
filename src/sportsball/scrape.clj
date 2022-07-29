@@ -6,8 +6,10 @@
    [clojure.string :as str]
    [sportsball.sb-specs :as specs]
    [sportsball.storage :as store]
+   [sportsball.utils :as utils]
    [flatland.ordered.set :refer [ordered-set]]
-   [overtone.at-at :as at-at])
+   [overtone.at-at :as at-at]
+   [taoensso.timbre :as log])
   (:import
    (java.time Duration)
    (org.openqa.selenium WebDriver)
@@ -25,9 +27,10 @@
         (Thread/sleep 20000)
         (extract-fn html))
       (catch Exception e
-        (str "caught exception: " (.getMessage e)))
+        (log/error
+         (str "caught exception: " (.getMessage e))))
       (finally
-        (prn "shutting down web driver")
+        (log/info "shutting down web driver")
         (.close driver)))))
 
 (defn class-prefix-selector
@@ -45,8 +48,7 @@
   (try
     (Integer/parseInt s)
     (catch java.lang.NumberFormatException e
-      ;; TODO: add logging
-      (prn e)
+      (log/debug e)
       nil)))
 
 
@@ -165,9 +167,7 @@
     (let [validation-errs  (filter (complement nil?)
                                     (map specs/check-odds odds-infos))]
       (if (seq validation-errs)
-        (do
-          ;; TODO: add logging
-          (clojure.pprint/pprint validation-errs))
+        (log/error (utils/ppformat validation-errs))
         (dorun (map store/store-odds odds-infos))))))
 
 

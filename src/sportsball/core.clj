@@ -6,8 +6,16 @@
             [muuntaja.core :as m]
             [muuntaja.format.form :as mform]
             [sportsball.scrape :as scrape]
-            [overtone.at-at :as at-at])
+            [overtone.at-at :as at-at]
+            [taoensso.timbre :as log]
+            [taoensso.timbre.appenders.core :as appenders])
   (:gen-class))
+
+;; logging setup
+(log/merge-config!
+ {:appenders {:spit (appenders/spit-appender
+                     {:fname "/Users/zakkent/Desktop/sportsball/log.txt"})}})
+(log/set-level! :debug)
 
 (def app-routes
   (ring/ring-handler
