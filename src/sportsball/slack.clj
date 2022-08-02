@@ -70,6 +70,22 @@
              Alert thresholds: %s, %s"
             game home-thres away-thres)))
 
+(defn send-threshold-alert [book-prices matchup side]
+  (let [current-prices (->> book-prices
+                        (map (fn [[b p]]
+                               (format "%s: %s\n" (name b) p)))
+                        str/join)
+        matchup (:matchup/teams matchup)
+        team (-> matchup
+                 (str/split #"-")
+                 ((fn [[away home]]
+                    (if (= side :home) home away))))]
+    (post-simple-msg
+     {:text
+      (format "Odds threshold triggered for the %s matchup.
+               Prices over threshold for %s at the following books:
+               %s" matchup team current-prices)})))
+
 (def alert-registration-msg
   {:channel sports-channel-id
    :text ""

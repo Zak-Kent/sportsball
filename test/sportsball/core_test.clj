@@ -89,10 +89,9 @@
     (is (= 1 (count @store/alert-registry)))))
 
 (deftest alert-triggered-when-odds-bundle-matches-element-in-registry
-  (let [send-results (atom [])
-        og-send-alert store/send-alert]
-    (with-redefs [store/send-alert
-                  (fn [b p] (swap! send-results conj (og-send-alert b p)))]
+  (let [send-results (atom [])]
+    (with-redefs [slack/send-threshold-alert
+                  (fn [book-prices _ _] (reset! send-results book-prices))]
       (tu/with-http-app
         (is (= 200
                (:status

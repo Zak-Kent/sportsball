@@ -4,7 +4,8 @@
             [java-time :as t]
             [clojure.string :as str]
             ;; needed to load json protocol extensions for jdbc-next
-            [sportsball.json :as _]))
+            [sportsball.json :as _]
+            [sportsball.slack :as slack]))
 
 (def db {:dbtype "postgresql"
          :user "postgres"
@@ -62,26 +63,33 @@
 (defn get-matchup-date [m]
   (-> (:matchup/time m) get-local-date))
 
-(defn send-alert [book price]
-  ;; just used in testing via with-redefs for now
-  [book price])
-
 (defn maybe-trigger [{:keys [home-threshold away-threshold]}
-                     [book {:keys [home-odds away-odds]}]]
-  (let [maybe-alert (fn [odds threshold]
-                      (when (and odds threshold)
-                        (when (> odds threshold)
-                          (send-alert book odds))))]
-    (maybe-alert home-odds home-threshold)
-    (maybe-alert away-odds away-threshold)))
+                     {:keys [home-odds away-odds]}
+                     matchup]
+  (let [send-alert (fn [odds threshold side]
+                     (when threshold
+                       (some->
+                        (filter (fn [[book price]]
+                                  (when (and price (> price threshold)) true))
+                                odds)
+                        (slack/send-threshold-alert matchup side))))]
+    (send-alert home-odds home-threshold :home)
+    (send-alert away-odds away-threshold :away)))
 
 (defn odds-alert [odds]
   (let [matchup (-> odds
                     game-info->matchup
                     (update :matchup/time get-local-date))
-        current-odds (-> odds :books seq)]
+        current-odds (-> odds :books)]
     (when-let [threshold (@alert-registry matchup)]
-      (dorun (map (partial maybe-trigger threshold) current-odds)))))
+      (maybe-trigger threshold
+                     (->> current-odds
+                          (reduce (fn [acc [book {home :home-odds away :away-odds}]]
+                                    (-> acc
+                                        (assoc-in [:home-odds book] home)
+                                        (assoc-in [:away-odds book] away)))
+                                  {}))
+                     matchup))))
 
 (defn update-alerts [alert-req]
   (let [mu (-> alert-req
