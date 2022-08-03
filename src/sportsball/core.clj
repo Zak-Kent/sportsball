@@ -1,5 +1,6 @@
 (ns sportsball.core
-  (:require [sportsball.handlers :as han]
+  (:require [sportsball.config :as config]
+            [sportsball.handlers :as han]
             [reitit.ring :as ring]
             [ring.adapter.jetty :as jetty]
             [reitit.ring.middleware.muuntaja :as rrmm]
@@ -45,6 +46,8 @@
 
 (defn -main
   [& args]
+  (config/load-config)
+
   (try
     (scrape/schedule-scrape
      scrape/scrape-sportsbookreview

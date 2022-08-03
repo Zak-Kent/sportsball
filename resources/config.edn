@@ -1,0 +1,5 @@
+{:db {:dbtype "postgres"
+      :user "postgres"
+      :port #include "/Users/zakkent/Desktop/sportsball/box/port"
+      :password #pgpass "/Users/zakkent/Desktop/sportsball/box/pgpass"
+      :dbname "sportsball"}}

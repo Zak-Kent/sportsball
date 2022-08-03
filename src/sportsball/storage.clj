@@ -5,17 +5,10 @@
             [clojure.string :as str]
             ;; needed to load json protocol extensions for jdbc-next
             [sportsball.json :as _]
-            [sportsball.slack :as slack]))
+            [sportsball.slack :as slack]
+            [sportsball.config :as config]))
 
-(def db {:dbtype "postgresql"
-         :user "postgres"
-         :port (-> (slurp "/Users/zakkent/Desktop/sportsball/box/port" )
-                   read-string)
-         :password (-> (slurp "/Users/zakkent/Desktop/sportsball/box/pgpass")
-                       (str/split #":")
-                       last
-                       str/trim-newline)
-         :dbname "sportsball"})
+(def db (:db config/CONFIG))
 
 (def ^:dynamic *db* db)
 
