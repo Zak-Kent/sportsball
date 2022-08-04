@@ -2,22 +2,12 @@
   (:require [clj-http.client :as client]
             [jsonista.core :as json]
             [clojure.string :as str]
-            [sportsball.sb-specs :as specs]))
+            [sportsball.sb-specs :as specs]
+            [sportsball.config :as config]))
 
-(defn env-var-set? [f env-var]
-  (if (nil? f)
-    (throw (Exception. (format "%s env var not set, see slack.clj" env-var)))
-    f))
+(def slack-url (-> config/CONFIG :slack :url))
 
-(defn get-env-var [env-var]
-  (-> (System/getenv env-var)
-      (env-var-set? env-var)
-      slurp
-      str/trim))
-
-(def slack-url (get-env-var "SPORTSBALL_SLACK_POST_URL_FILE"))
-
-(def slack-bot-auth-token (get-env-var "SPORTSBALL_SLACK_BOT_TOKEN"))
+(def slack-bot-auth-token (-> config/CONFIG :slack :bot-token))
 
 (defn get-channel-id [channel]
   (let [channels (-> (client/get "https://slack.com/api/conversations.list"

@@ -2,4 +2,6 @@
       :user "postgres"
       :port #include "/Users/zakkent/Desktop/sportsball/box/port"
       :password #pgpass "/Users/zakkent/Desktop/sportsball/box/pgpass"
-      :dbname "sportsball"}}
+      :dbname "sportsball"}
+ :slack {:url #slack-config-file #req-env SPORTSBALL_SLACK_POST_URL_FILE
+         :bot-token #slack-config-file #req-env SPORTSBALL_SLACK_BOT_TOKEN}}
