@@ -4,4 +4,5 @@
       :password #pgpass "/Users/zakkent/Desktop/sportsball/box/pgpass"
       :dbname "sportsball"}
  :slack {:url #slack-config-file #req-env SPORTSBALL_SLACK_POST_URL_FILE
-         :bot-token #slack-config-file #req-env SPORTSBALL_SLACK_BOT_TOKEN}}
+         :bot-token #slack-config-file #req-env SPORTSBALL_SLACK_BOT_TOKEN}
+ :logging {:log-file #req-env SPORTSBALL_LOG_FILE}}

@@ -12,11 +12,11 @@
             [taoensso.timbre.appenders.core :as appenders])
   (:gen-class))
 
-;; logging setup
-(log/merge-config!
- {:appenders {:spit (appenders/spit-appender
-                     {:fname "/Users/zakkent/Desktop/sportsball/log.txt"})}})
-(log/set-level! :debug)
+(defn setup-logging []
+  (log/merge-config!
+   {:appenders {:spit (appenders/spit-appender
+                       {:fname (-> config/CONFIG :logging :log-file)})}})
+  (log/set-level! :debug))
 
 (def app-routes
   (ring/ring-handler
@@ -47,6 +47,7 @@
 (defn -main
   [& args]
   (config/load-config)
+  (setup-logging)
 
   (try
     (scrape/schedule-scrape
