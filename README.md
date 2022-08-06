@@ -18,6 +18,26 @@ FIXME: listing of options this app accepts.
 
 ## Examples
 
+## Configuration
+
+The configuration is specified in the project's config.edn file. In that file
+there is a top level map which has the following format:
+```
+{:db {:dbtype "postgres"
+      :user <user>
+      :port <port>
+      :password <pass>
+      :dbname "sportsball"}
+
+ :slack {:url <required-env-var: SPORTSBALL_SLACK_POST_URL_FILE>
+         :bot-token <required-env-var: SPORTSBALL_SLACK_BOT_TOKEN>}
+
+ :logging {<required-env-var: SPORTSBALL_LOG_FILE>}}
+```
+
+All `required-env-vars` listed above must be present in the environment when the
+program is run along with values for all the keys shown above.
+
 ...
 
 ### Bugs
