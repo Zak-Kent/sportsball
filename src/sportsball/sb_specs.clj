@@ -17,10 +17,11 @@
                   [:away-odds away-odds]]
                  [:fn (fn [{:keys [:home-odds :away-odds]}]
                         (= (type home-odds) (type away-odds)))]]))
+(def book-keys [:bovada :betonline :bookmaker :heritage :intertops :youwager
+                :Bet365 :Unibet :Betway :BetMGM :888sport])
 (def books (m/schema
             [:map-of
-             [:enum :bovada :betonline :bookmaker :heritage :intertops :youwager
-                    :Bet365 :Unibet :Betway :BetMGM :888sport]
+             (into [] (cons :enum book-keys))
              book-odds]))
 
 ;; Teams
