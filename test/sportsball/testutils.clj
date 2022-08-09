@@ -9,7 +9,8 @@
             [malli.transform :as mt]
             [sportsball.sb-specs :as sbs]
             [sportsball.storage :as store]
-            [sportsball.core :as sbcore]))
+            [sportsball.core :as sbcore]
+            [clojure.java.io :as io]))
 
 (defn db-config []
   {:dbtype "postgresql"
@@ -68,6 +69,26 @@
 (defmacro with-http-app
   [& body]
   `(call-with-http-app (fn [] ~@body)))
+
+(def temp-dir "test/resources/tmp-test-files")
+
+(defn delete-dir [dir]
+  (letfn [(delete [file]
+            (when (.isDirectory file)
+              (doseq [child (.listFiles file)]
+                (delete child)))
+            (io/delete-file file true))]
+    (delete (io/file dir))))
+
+(defn call-with-temp-files [f]
+  (.mkdirs (io/file temp-dir))
+  (let [result (f)]
+    (delete-dir temp-dir)
+    result))
+
+(defmacro with-temp-files
+  [& body]
+  `(call-with-temp-files (fn [] ~@body)))
 
 (defn query-test-db [query]
   (sql/query store/*db* [query]))

@@ -120,4 +120,3 @@
                            (slack-utils/mock-slack-alert-action-msg :team-select)
                            :urlencoded))))
     (is (= 0 (count @store/alert-registry)))))
-
