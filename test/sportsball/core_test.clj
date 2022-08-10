@@ -9,7 +9,10 @@
             [sportsball.storage :as store]
             [sportsball.slack-testutils :as slack-utils]
             [ring.mock.request :as mock]
-            [sportsball.slack :as slack]))
+            [sportsball.slack :as slack]
+            [clojure.java.io :as io]
+            [clojure.data.csv :as csv]
+            [sportsball.utils :as utils]))
 
 (defn gen-odds-info
   ([] (gen-odds-info 42))
@@ -120,3 +123,25 @@
                            (slack-utils/mock-slack-alert-action-msg :team-select)
                            :urlencoded))))
     (is (= 0 (count @store/alert-registry)))))
+
+(deftest csv-export
+  (tu/with-test-db
+    (tu/with-temp-files
+      (let [odds (gen-odds-info)
+            local-time (t/instant)
+            local-time+1d (t/plus local-time (t/days 1))
+            store-match (fn [ts]
+                          (store/store-odds
+                           (assoc odds :timestamp (t/instant->sql-timestamp ts))))
+            test-csv (io/file tu/temp-dir "test.csv")]
+        (store-match local-time)
+        (store-match local-time+1d)
+
+        (store/export-odds-csv test-csv)
+
+        (let [[header & rows] (csv/read-csv (slurp test-csv))
+              row-maps (utils/csv->row-maps header rows)]
+          (is (= 2 (count row-maps)))
+          (is (= "200"
+                 (:BetMGM-away (first row-maps))
+                 (:BetMGM-away (second row-maps)))))))))

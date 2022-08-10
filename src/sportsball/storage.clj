@@ -162,8 +162,8 @@
         book-odds (-> odds-info :odds/lines :books)]
     (concat game-info (lookup-odds book-odds))))
 
-(defn export-odds-csv []
-  ;; TODO: add a way to specify a date range and dst file & path
+(defn export-odds-csv [dst]
+  ;; TODO: add a way to specify a date range
   (let [db-odds (jdbc/execute! *db*
                                ["select odds.time, odds.lines, odds.home_score,
                                           odds.away_score, matchup.teams
@@ -171,5 +171,5 @@
                                  join matchup on odds.matchup_id=matchup.matchup_id;"])
         header-row (-> db-odds first create-header-row)
         odds-rows (map odds-info->csv-row db-odds)]
-    (with-open [writer (io/writer "sportsball-odds-data.csv")]
+    (with-open [writer (io/writer dst)]
       (csv/write-csv writer (cons header-row odds-rows)))))
