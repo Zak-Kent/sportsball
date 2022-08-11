@@ -162,8 +162,11 @@
         book-odds (-> odds-info :odds/lines :books)]
     (concat game-info (lookup-odds book-odds))))
 
-(defn export-odds-csv [dst]
+(defn pull-data-for-csv-export
+  "pull all the data from the odds table"
+  []
   ;; TODO: add a way to specify a date range
+  ;; TODO: may need to adjust to streaming results when size grows
   (let [db-odds (jdbc/execute! *db*
                                ["select odds.time, odds.lines, odds.home_score,
                                           odds.away_score, matchup.teams
@@ -171,5 +174,8 @@
                                  join matchup on odds.matchup_id=matchup.matchup_id;"])
         header-row (-> db-odds first create-header-row)
         odds-rows (map odds-info->csv-row db-odds)]
-    (with-open [writer (io/writer dst)]
-      (csv/write-csv writer (cons header-row odds-rows)))))
+    (cons header-row odds-rows)))
+
+(defn export-odds-csv [dst]
+  (with-open [writer (io/writer dst)]
+    (csv/write-csv writer (pull-data-for-csv-export))))
