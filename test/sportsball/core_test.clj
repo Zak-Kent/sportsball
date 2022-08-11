@@ -12,7 +12,8 @@
             [sportsball.slack :as slack]
             [clojure.java.io :as io]
             [clojure.data.csv :as csv]
-            [sportsball.utils :as utils]))
+            [sportsball.utils :as utils]
+            [sportsball.csv :as sbcsv]))
 
 (defn gen-odds-info
   ([] (gen-odds-info 42))
@@ -137,7 +138,7 @@
         (store-match local-time)
         (store-match local-time+1d)
 
-        (store/export-odds-csv test-csv)
+        (sbcsv/export-odds-csv test-csv)
 
         (let [[header & rows] (csv/read-csv (slurp test-csv))
               row-maps (utils/csv->row-maps header rows)]
