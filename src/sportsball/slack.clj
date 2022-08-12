@@ -3,7 +3,8 @@
             [jsonista.core :as json]
             [clojure.string :as str]
             [sportsball.sb-specs :as specs]
-            [sportsball.config :as config]))
+            [sportsball.config :as config]
+            [clojure.java.io :as io]))
 
 (def slack-url (-> config/CONFIG :slack :url))
 
@@ -123,11 +124,10 @@
                          :value "foo"
                          :action_id "register-alert"}]}]})
 
-
-(comment
-
-  (post-msg alert-registration-msg)
-
-  (post-simple-msg {:text "hello there"})
-
-  )
+(defn send-csv [csv-stream]
+  (with-open [csv-data (io/input-stream csv-stream)]
+    (client/post "https://slack.com/api/files.upload"
+                 {:multipart [{:name "filetype" :content "csv"}
+                              {:name "file" :content csv-data}
+                              {:name "channels" :content sports-channel-id}]
+                  :oauth-token slack-bot-auth-token})))

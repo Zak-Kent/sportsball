@@ -5,7 +5,8 @@
    [next.jdbc :as jdbc]
    [sportsball.storage :as store]
    [sportsball.sb-specs :as spec]
-   [sportsball.config :as config])
+   [sportsball.config :as config]
+   [sportsball.slack :as slack])
   (:import [java.io PipedInputStream PipedOutputStream]))
 
 ;; CSV export
@@ -53,3 +54,14 @@
 (defn export-odds-csv [dst]
   (with-open [writer (io/writer dst)]
     (csv/write-csv writer (pull-data-for-csv-export))))
+
+(defn create-csv-stream []
+  (let [in-stream (new PipedInputStream)
+        out-stream (PipedOutputStream. in-stream)]
+    (.start (Thread.
+             #(with-open [writer (io/writer out-stream)]
+                (csv/write-csv writer (pull-data-for-csv-export)))))
+    in-stream))
+
+(defn send-slack-csv []
+  (slack/send-csv (create-csv-stream)))
