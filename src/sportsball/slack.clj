@@ -6,9 +6,9 @@
             [sportsball.config :as config]
             [clojure.java.io :as io]))
 
-(def slack-url (-> config/CONFIG :slack :url))
-
-(def slack-bot-auth-token (-> config/CONFIG :slack :bot-token))
+(def slack-url nil)
+(def slack-bot-auth-token nil)
+(def sports-channel-id nil)
 
 (defn get-channel-id [channel]
   (let [channels (-> (client/get "https://slack.com/api/conversations.list"
@@ -20,7 +20,15 @@
          first
          :id)))
 
-(def sports-channel-id (get-channel-id "sports"))
+(defn setup-slack-config []
+  (alter-var-root (var slack-url)
+                  (constantly
+                   (-> config/CONFIG :slack :url)))
+  (alter-var-root (var slack-bot-auth-token)
+                  (constantly
+                   (-> config/CONFIG :slack :bot-token)))
+  (alter-var-root (var sports-channel-id)
+                  (constantly (get-channel-id "sports"))))
 
 (defn post-simple-msg [msg]
   "Post a messge using the pre generated slack url. This can only be used
@@ -77,7 +85,7 @@
                Prices over threshold for %s at the following books:
                %s" matchup team current-prices)})))
 
-(def alert-registration-msg
+(defn alert-registration-msg []
   {:channel sports-channel-id
    :text ""
    :blocks [{:type "header"

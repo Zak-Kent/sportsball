@@ -10,7 +10,8 @@
             [overtone.at-at :as at-at]
             [taoensso.timbre :as log]
             [taoensso.timbre.appenders.core :as appenders]
-            [sportsball.storage :as store])
+            [sportsball.storage :as store]
+            [sportsball.slack :as slack])
   (:gen-class))
 
 (defn setup-logging []
@@ -49,7 +50,8 @@
   ;; order matters here, the config must be loaded first
   (config/load-config)
   (setup-logging)
-  (store/setup-db-config))
+  (store/setup-db-config)
+  (slack/setup-slack-config))
 
 (defn -main
   [& args]

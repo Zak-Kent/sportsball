@@ -88,6 +88,5 @@
                 body
                 :command)]
     (if (= "/register-game-alert" cmd)
-      (rr/response slack/alert-registration-msg)
+      (rr/response (slack/alert-registration-msg))
       (rr/bad-request {:error "unexpected command"}))))
-
