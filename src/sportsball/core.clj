@@ -9,7 +9,8 @@
             [sportsball.scrape :as scrape]
             [overtone.at-at :as at-at]
             [taoensso.timbre :as log]
-            [taoensso.timbre.appenders.core :as appenders])
+            [taoensso.timbre.appenders.core :as appenders]
+            [sportsball.storage :as store])
   (:gen-class))
 
 (defn setup-logging []
@@ -44,10 +45,15 @@
    (ring/create-default-handler
     {:not-found (constantly {:status 404 :body "Not found, where did it go?"})})))
 
-(defn -main
-  [& args]
+(defn load-configs []
+  ;; order matters here, the config must be loaded first
   (config/load-config)
   (setup-logging)
+  (store/setup-db-config))
+
+(defn -main
+  [& args]
+  (load-configs)
 
   (try
     (scrape/schedule-scrape

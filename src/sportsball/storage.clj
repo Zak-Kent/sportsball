@@ -9,9 +9,10 @@
             [sportsball.config :as config]
             [sportsball.sb-specs :as spec]))
 
-(def db (:db config/CONFIG))
-
-(def ^:dynamic *db* db)
+(def ^:dynamic *db* nil)
+(defn setup-db-config []
+  (alter-var-root (var *db*) (constantly
+                              (:db config/CONFIG))))
 
 ;; TODO: you might eventually want a way to gc old alerts
 (def alert-registry (atom {}))
