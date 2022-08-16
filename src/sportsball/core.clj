@@ -34,7 +34,10 @@
               :handler han/slack-register-alert}}]
      ["/slack-send-alert-msg"
       {:post {:summary "Sends a slack msg with an alert registration form"
-              :handler han/slack-send-alert-register-msg}}]]
+              :handler han/slack-send-alert-register-msg}}]
+     ["/export-csv"
+      {:post {:summary "Sends a csv export of the odds table to slack"
+              :handler han/slack-send-csv-export}}]]
     {:data {:muuntaja
             (m/create (-> m/default-options
                           (update :formats

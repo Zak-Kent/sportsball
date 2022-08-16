@@ -4,6 +4,7 @@
    [sportsball.storage :as st]
    [sportsball.sb-specs :as spec]
    [sportsball.slack :as slack]
+   [sportsball.csv :as sbcsv]
    [java-time :as t]
    [jsonista.core :as json]))
 
@@ -89,4 +90,14 @@
                 :command)]
     (if (= "/register-game-alert" cmd)
       (rr/response (slack/alert-registration-msg))
+      (rr/bad-request {:error "unexpected command"}))))
+
+(defn slack-send-csv-export [body]
+  (let [cmd (-> :body-params
+                body
+                :command)]
+    (if (= "/export-csv" cmd)
+      (do
+        (sbcsv/send-slack-csv)
+        (rr/response {:text "sending csv export"}))
       (rr/bad-request {:error "unexpected command"}))))
