@@ -66,8 +66,4 @@
      ;; 5 mins in ms
      (* 1000 60 5))
 
-    (jetty/run-jetty #'app-routes {:port 3000
-                                   :join? false})
-
-    (finally
-      (at-at/stop-and-reset-pool! scrape/scrape-pool))))
+    (jetty/run-jetty #'app-routes {:port 3000})))
