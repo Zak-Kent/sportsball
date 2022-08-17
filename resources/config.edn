@@ -1,8 +1,13 @@
-{:db {:dbtype "postgres"
-      :user "postgres"
-      :port #include "/Users/zakkent/Desktop/sportsball/box/port"
-      :password #pgpass "/Users/zakkent/Desktop/sportsball/box/pgpass"
-      :dbname "sportsball"}
- :slack {:url #slack-config-file #req-env SPORTSBALL_SLACK_POST_URL_FILE
-         :bot-token #slack-config-file #req-env SPORTSBALL_SLACK_BOT_TOKEN}
- :logging {:log-file #req-env SPORTSBALL_LOG_FILE}}
+{:storage/db {:dbtype "postgres"
+              :user "postgres"
+              ;; TODO change these paths to env vars
+              :port #include "/Users/zakkent/Desktop/sportsball/box/port"
+              :password #pgpass "/Users/zakkent/Desktop/sportsball/box/pgpass"
+              :dbname "sportsball"}
+ :slack/conn-info {:url #slack-config-file #req-env SPORTSBALL_SLACK_POST_URL_FILE
+                   :bot-token #slack-config-file #req-env SPORTSBALL_SLACK_BOT_TOKEN
+                   :channel "sports"}
+ :app/logging {:log-file #req-env SPORTSBALL_LOG_FILE}
+ :app/jetty {:jetty {:port 3000}
+             :db #ig/ref :storage/db
+             :slack-conn-info #ig/ref :slack/conn-info}}
