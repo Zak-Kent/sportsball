@@ -6,13 +6,9 @@
             [sportsball.config :as config]
             [clojure.java.io :as io]))
 
-(def slack-url nil)
-(def slack-bot-auth-token nil)
-(def sports-channel-id nil)
-
-(defn get-channel-id [channel]
+(defn get-channel-id [{:keys [bot-token channel]}]
   (let [channels (-> (client/get "https://slack.com/api/conversations.list"
-                                 {:oauth-token slack-bot-auth-token})
+                                 {:oauth-token bot-token})
                      :body
                      (json/read-value json/keyword-keys-object-mapper))]
     (->> (:channels channels)
@@ -20,36 +16,26 @@
          first
          :id)))
 
-(defn setup-slack-config []
-  (alter-var-root (var slack-url)
-                  (constantly
-                   (-> config/CONFIG :slack :url)))
-  (alter-var-root (var slack-bot-auth-token)
-                  (constantly
-                   (-> config/CONFIG :slack :bot-token)))
-  (alter-var-root (var sports-channel-id)
-                  (constantly (get-channel-id "sports"))))
-
-(defn post-simple-msg [msg]
+(defn post-simple-msg [{:keys [url]} msg]
   "Post a messge using the pre generated slack url. This can only be used
    for simple text messages and can't be used for interactive messages"
-  (client/post slack-url
+  (client/post url
                {:body (json/write-value-as-string msg)
                 :headers {}
                 :content-type :json
                 :accept :json}))
 
 (defn post-msg
-  ([body]
-   (post-msg "https://slack.com/api/chat.postMessage" body))
-  ([url body]
+  ([config body]
+   (post-msg config "https://slack.com/api/chat.postMessage" body))
+  ([{:keys [bot-token]} url body]
    "Post an interactive message in the sports channel"
    (client/post url
                 {:body (json/write-value-as-string body)
                  :headers {}
                  :content-type :json
                  :accept :json
-                 :oauth-token slack-bot-auth-token})))
+                 :oauth-token bot-token})))
 
 (defn team-options []
   "Helper func that makes the options vector for the team selection drop down"
@@ -69,7 +55,7 @@
              Alert thresholds: %s, %s"
             game home-thres away-thres)))
 
-(defn send-threshold-alert [book-prices matchup side]
+(defn send-threshold-alert [config book-prices matchup side]
   (let [current-prices (->> book-prices
                         (map (fn [[b p]]
                                (format "%s: %s\n" (name b) p)))
@@ -80,13 +66,14 @@
                  ((fn [[away home]]
                     (if (= side :home) home away))))]
     (post-simple-msg
+     (:slack-conn-info config)
      {:text
       (format "Odds threshold triggered for the %s matchup.
                Prices over threshold for %s at the following books:
                %s" matchup team current-prices)})))
 
-(defn alert-registration-msg []
-  {:channel sports-channel-id
+(defn alert-registration-msg [{:keys [channel-id]}]
+  {:channel channel-id
    :text ""
    :blocks [{:type "header"
 		         :text {:type "plain_text"
@@ -132,10 +119,10 @@
                          :value "foo"
                          :action_id "register-alert"}]}]})
 
-(defn send-csv [csv-stream]
+(defn send-csv [{:keys [channel-id bot-token]} csv-stream]
   (with-open [csv-data (io/input-stream csv-stream)]
     (client/post "https://slack.com/api/files.upload"
                  {:multipart [{:name "filetype" :content "csv"}
                               {:name "file" :content csv-data}
-                              {:name "channels" :content sports-channel-id}]
-                  :oauth-token slack-bot-auth-token})))
+                              {:name "channels" :content channel-id}]
+                  :oauth-token bot-token})))
