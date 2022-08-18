@@ -2,7 +2,8 @@
   (:require
    [aero.core :as aero]
    [clojure.java.io :as io]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [integrant.core :as ig]))
 
 (defn env-var-set? [f env-var]
   (if (nil? f)
@@ -27,10 +28,9 @@
       slurp
       str/trim))
 
-(def CONFIG nil)
-
-(defn set-config! [config]
-  (alter-var-root (var CONFIG) (constantly config)))
+(defmethod aero.core/reader 'ig/ref
+  [{:keys [profile] :as opts} tag value]
+  (ig/ref value))
 
 (defn load-config []
-  (set-config! (aero/read-config (io/resource "config.edn"))))
+  (aero/read-config (io/resource "config.edn")))
