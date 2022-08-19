@@ -56,11 +56,13 @@
   (assoc slack-conn-info :channel-id
          (slack/get-channel-id slack-conn-info)))
 
-(defmethod ig/init-key :app/jetty [_ config]
-  (let [jetty-config (:jetty config)
-        config-with-alert-reg (assoc config :alert-registry (atom {}))
+(defmethod ig/init-key :app/routes [_ config]
+  (let [config-with-alert-reg (assoc config :alert-registry (atom {}))
         app-routes (init-app-routes config-with-alert-reg)]
-    (jetty/run-jetty app-routes jetty-config)))
+    app-routes))
+
+(defmethod ig/init-key :app/jetty [_ {:keys [jetty-conf app-routes] :as config}]
+  (jetty/run-jetty app-routes jetty-conf))
 
 (defn init-app [config]
   (ig/init config))

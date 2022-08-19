@@ -8,6 +8,8 @@
                    :bot-token #slack-config-file #req-env SPORTSBALL_SLACK_BOT_TOKEN
                    :channel "sports"}
  :app/logging {:log-file #req-env SPORTSBALL_LOG_FILE}
- :app/jetty {:jetty {:port 3000}
-             :db #ig/ref :storage/db
-             :slack-conn-info #ig/ref :slack/conn-info}}
+ :app/routes {:alert-registry nil
+              :db #ig/ref :storage/db
+              :slack-conn-info #ig/ref :slack/conn-info}
+ :app/jetty {:jetty-conf {:port 3000}
+             :app-routes #ig/ref :app/routes}}
