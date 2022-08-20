@@ -11,5 +11,5 @@
  :app/routes {:alert-registry nil
               :db #ig/ref :storage/db
               :slack-conn-info #ig/ref :slack/conn-info}
- :app/jetty {:jetty-conf {:port 3000}
+ :app/jetty {:jetty-conf {:port 3000 :join? false}
              :app-routes #ig/ref :app/routes}}

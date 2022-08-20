@@ -64,5 +64,8 @@
 (defmethod ig/init-key :app/jetty [_ {:keys [jetty-conf app-routes] :as config}]
   (jetty/run-jetty app-routes jetty-conf))
 
+(defmethod ig/halt-key! :app/jetty [_ server]
+  (.stop server))
+
 (defn init-app [config]
   (ig/init config))
