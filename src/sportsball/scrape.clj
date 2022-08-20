@@ -159,7 +159,7 @@
          (filter (fn [{:keys [books]}]
                    ((complement nil?) books))))))
 
-(defn scrape-sportsbookreview []
+(defn scrape-sportsbookreview [config]
   (let [url "https://www.sportsbookreview.com/betting-odds/mlb-baseball/money-line/"
         odds-infos (-> url
                        (html->data
@@ -168,7 +168,7 @@
                                     (map specs/check-odds odds-infos))]
       (if (seq validation-errs)
         (log/error (utils/ppformat validation-errs))
-        (dorun (map store/store-odds odds-infos))))))
+        (dorun (map (partial store/store-odds config) odds-infos))))))
 
 
 ;; scheduling

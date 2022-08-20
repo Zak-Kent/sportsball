@@ -24,13 +24,14 @@
                       (not-any? nil?)))))))
 
 (deftest scrape-sportsbookreview-stores-odds-info-bundles-in-db
-  (tu/with-test-db
-    (let [odds-infos (-> (slurp "dev-resources/live-game-scrape.html")
-                         sc/sportsbookreview->odds-infos)]
-      (with-redefs [sc/html->data (fn [_ _] odds-infos)]
+  (tu/call-with-test-config
+   (fn [config]
+     (let [odds-infos (-> (slurp "dev-resources/live-game-scrape.html")
+                          sc/sportsbookreview->odds-infos)]
+       (with-redefs [sc/html->data (fn [_ _] odds-infos)]
 
-        ;; trigger scrape, this will cause odds-infos above to be stored
-        (sc/scrape-sportsbookreview)
+         ;; trigger scrape, this will cause odds-infos above to be stored
+         (sc/scrape-sportsbookreview config)
 
-        (is (= [{:count 12}] (tu/all-odds)))
-        (is (= [{:count 12}] (tu/all-matchups)))))))
+         (is (= [{:count 12}] (tu/all-odds config)))
+         (is (= [{:count 12}] (tu/all-matchups config))))))))
