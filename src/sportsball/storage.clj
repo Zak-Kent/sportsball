@@ -49,13 +49,14 @@
                      {:keys [home-threshold away-threshold]}
                      {:keys [home-odds away-odds]}
                      matchup]
-  (let [send-alert (fn [odds threshold side]
+  (let [slack-alert (partial slack/send-threshold-alert config)
+        send-alert (fn [odds threshold side]
                      (when threshold
                        (some->
                         (filter (fn [[book price]]
                                   (when (and price (> price threshold)) true))
                                 odds)
-                        (slack/send-threshold-alert config matchup side))))]
+                        (slack-alert matchup side))))]
     (send-alert home-odds home-threshold :home)
     (send-alert away-odds away-threshold :away)))
 

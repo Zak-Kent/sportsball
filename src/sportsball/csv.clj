@@ -51,9 +51,9 @@
         odds-rows (map odds-info->csv-row db-odds)]
     (cons header-row odds-rows)))
 
-(defn export-odds-csv [dst]
+(defn export-odds-csv [db dst]
   (with-open [writer (io/writer dst)]
-    (csv/write-csv writer (pull-data-for-csv-export))))
+    (csv/write-csv writer (pull-data-for-csv-export db))))
 
 (defn create-csv-stream [db]
   (let [in-stream (new PipedInputStream)

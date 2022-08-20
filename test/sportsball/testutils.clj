@@ -9,7 +9,8 @@
             [malli.transform :as mt]
             [sportsball.sb-specs :as sbs]
             [sportsball.storage :as store]
-            [sportsball.core :as sbcore]
+            [sportsball.app :as sbapp]
+            [sportsball.config :as config]
             [clojure.java.io :as io]))
 
 (defn db-config []
@@ -22,6 +23,11 @@
                  last
                  str/trim-newline)})
 
+(defn mock-app-config []
+  {:db (db-config)
+   :slack-conn-info {:url "foo" :bot-token "bar"}
+   :alert-registry (atom {})})
+
 (defn build-test-db []
   (let [db "sportsball_test"
         admin-conf (db-config)
@@ -32,19 +38,16 @@
       (jdbc/execute! conn [(format "create database %s" db)])
       (with-open [db-conn (jdbc/get-connection
                            (jdbc/get-datasource db-conf))]
-        (jdbc/execute! db-conn store/matchup-table-sql)
-        (jdbc/execute! db-conn store/odds-table-sql)))
+        (store/init-db db-conn)))
     db-conf))
 
-(defn call-with-test-db [f]
+(defn call-with-test-config [f]
   (let [db-conf (build-test-db)]
-    (with-open [conn (jdbc/get-connection
-                       (jdbc/get-datasource db-conf))]
-      (binding [store/*db* conn]
-        (f)))))
+    (f (assoc (mock-app-config) :db db-conf))))
 
-(defmacro with-test-db [& body]
-  `(call-with-test-db (fn [] ~@body)))
+(defn call-with-test-app-and-config [f]
+  (let [test-config (call-with-test-config identity)]
+    (f (sbapp/init-app-routes test-config) test-config)))
 
 (defn gen-fake-odds-json []
   (j/write-value-as-string
@@ -52,23 +55,6 @@
     sbs/odds-info
     (mg/generate sbs/odds-info {:seed 55})
     mt/json-transformer)))
-
-;; http test setup
-(def ^:dynamic *app* nil)
-
-(defn call-with-http-app
-  "Builds an HTTP app and make it available as *app* during the
-  execution of (f)."
-  [f]
-  (binding [*app* sbcore/app-routes]
-    ;; atom holds state when tests are evaled multiple times in repl, gross
-    (reset! store/alert-registry {})
-    (with-test-db
-      (f))))
-
-(defmacro with-http-app
-  [& body]
-  `(call-with-http-app (fn [] ~@body)))
 
 (def temp-dir "test/resources/tmp-test-files")
 
@@ -90,11 +76,11 @@
   [& body]
   `(call-with-temp-files (fn [] ~@body)))
 
-(defn query-test-db [query]
-  (sql/query store/*db* [query]))
+(defn query-test-db [db query]
+  (sql/query db [query]))
 
-(defn all-matchups []
-  (query-test-db "select count(*) from matchup"))
+(defn all-matchups [{:keys [db]}]
+  (query-test-db db "select count(*) from matchup"))
 
-(defn all-odds []
-  (query-test-db "select count(*) from odds"))
+(defn all-odds [{:keys [db]}]
+  (query-test-db db "select count(*) from odds"))
