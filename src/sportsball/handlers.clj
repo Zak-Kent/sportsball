@@ -11,7 +11,7 @@
 (defn ts->sql-ts [ts]
   (when ts (t/instant->sql-timestamp ts)))
 
-(defn store-odds [body]
+(defn store-odds [config body]
   (let [odds (-> :body-params
                  body
                  (update :timestamp ts->sql-ts))
@@ -19,10 +19,10 @@
     (if fmt-err
       (rr/bad-request fmt-err)
       (do
-        (let [resp (st/store-odds odds)]
+        (let [resp (st/store-odds config odds)]
           (rr/response resp))))))
 
-(defn register-alert [body]
+(defn register-alert [alert-registry body]
   (let [sub (-> :body-params
                 body
                 (update :timestamp ts->sql-ts))
@@ -30,7 +30,7 @@
     (if fmt-err
       (rr/bad-request fmt-err)
       (do
-        (st/update-alerts sub)
+        (st/update-alerts alert-registry sub)
         (rr/response sub)))))
 
 (defn get-team [slack-input home|away]
@@ -53,7 +53,7 @@
     {threshold-key (when threshold
                      (Integer/parseInt threshold))}))
 
-(defn trigger-alert-registration [payload]
+(defn trigger-alert-registration [{:keys [alert-registry] :as config} payload]
   (let [response_url (:response_url payload)
         form-vals (-> payload :state :values)
         teams (map (partial get-team form-vals) ["home" "away"])
@@ -66,13 +66,14 @@
       (rr/bad-request fmt-err)
       (do
         ;; only register the alert when the user presses the button in slack
-        (st/update-alerts alert-sub)
+        (st/update-alerts alert-registry alert-sub)
         (slack/post-msg
+         (:slack-conn-info config)
          response_url
          {:text (slack/alert-sub->alert-reg-msg alert-sub)})
         (rr/response {:ok 0})))))
 
-(defn slack-register-alert [body]
+(defn slack-register-alert [config body]
   (let [payload (-> body
                     :body-params
                     :payload
@@ -80,24 +81,24 @@
         register-button? (= "register-alert"
                             (-> payload :actions first :action_id))]
     (if register-button?
-      (trigger-alert-registration payload)
+      (trigger-alert-registration config payload)
       ;; if action is not register-alert button ack req and do nothing
       (rr/response {:ok 0}))))
 
-(defn slack-send-alert-register-msg [body]
+(defn slack-send-alert-register-msg [slack-conn-info body]
   (let [cmd (-> :body-params
                 body
                 :command)]
     (if (= "/register-game-alert" cmd)
-      (rr/response (slack/alert-registration-msg))
+      (rr/response (slack/alert-registration-msg slack-conn-info))
       (rr/bad-request {:error "unexpected command"}))))
 
-(defn slack-send-csv-export [body]
+(defn slack-send-csv-export [config body]
   (let [cmd (-> :body-params
                 body
                 :command)]
     (if (= "/export-csv" cmd)
       (do
-        (sbcsv/send-slack-csv)
+        (sbcsv/send-slack-csv config)
         (rr/response {:text "sending csv export"}))
       (rr/bad-request {:error "unexpected command"}))))

@@ -39,10 +39,10 @@
 
 (defn pull-data-for-csv-export
   "pull all the data from the odds table"
-  []
+  [db]
   ;; TODO: add a way to specify a date range
   ;; TODO: may need to adjust to streaming results when size grows
-  (let [db-odds (jdbc/execute! store/*db*
+  (let [db-odds (jdbc/execute! db
                                ["select odds.time, odds.lines, odds.home_score,
                                           odds.away_score, matchup.teams
                                  from odds
@@ -51,17 +51,17 @@
         odds-rows (map odds-info->csv-row db-odds)]
     (cons header-row odds-rows)))
 
-(defn export-odds-csv [dst]
+(defn export-odds-csv [db dst]
   (with-open [writer (io/writer dst)]
-    (csv/write-csv writer (pull-data-for-csv-export))))
+    (csv/write-csv writer (pull-data-for-csv-export db))))
 
-(defn create-csv-stream []
+(defn create-csv-stream [db]
   (let [in-stream (new PipedInputStream)
         out-stream (PipedOutputStream. in-stream)]
     (.start (Thread.
              #(with-open [writer (io/writer out-stream)]
-                (csv/write-csv writer (pull-data-for-csv-export)))))
+                (csv/write-csv writer (pull-data-for-csv-export db)))))
     in-stream))
 
-(defn send-slack-csv []
-  (slack/send-csv (create-csv-stream)))
+(defn send-slack-csv [{:keys [db slack-conn-info]}]
+  (slack/send-csv slack-conn-info (create-csv-stream db)))

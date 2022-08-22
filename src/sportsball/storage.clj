@@ -9,14 +9,6 @@
             [sportsball.config :as config]
             [sportsball.sb-specs :as spec]))
 
-(def ^:dynamic *db* nil)
-(defn setup-db-config []
-  (alter-var-root (var *db*) (constantly
-                              (:db config/CONFIG))))
-
-;; TODO: you might eventually want a way to gc old alerts
-(def alert-registry (atom {}))
-
 (def matchup-table-sql
   ["create table if not exists matchup (
       matchup_id SERIAL PRIMARY KEY,
@@ -34,14 +26,9 @@
         FOREIGN KEY (matchup_id)
           REFERENCES matchup(matchup_id))"])
 
-(defn create-matchup-table []
-  (jdbc/execute! *db* matchup-table-sql))
-
-(defn create-odds-table []
-  (jdbc/execute! *db* odds-table-sql))
-
-(defn check-odds []
-  (jdbc/execute! *db* [" SELECT * from odds; "]))
+(defn init-db [db]
+  (jdbc/execute! db matchup-table-sql)
+  (jdbc/execute! db odds-table-sql))
 
 (defn game-info->matchup [game-info]
   (let [ts (:timestamp game-info)
@@ -58,26 +45,29 @@
 (defn get-matchup-date [m]
   (-> (:matchup/time m) get-local-date))
 
-(defn maybe-trigger [{:keys [home-threshold away-threshold]}
+(defn maybe-trigger [config
+                     {:keys [home-threshold away-threshold]}
                      {:keys [home-odds away-odds]}
                      matchup]
-  (let [send-alert (fn [odds threshold side]
+  (let [slack-alert (partial slack/send-threshold-alert config)
+        send-alert (fn [odds threshold side]
                      (when threshold
                        (some->
                         (filter (fn [[book price]]
                                   (when (and price (> price threshold)) true))
                                 odds)
-                        (slack/send-threshold-alert matchup side))))]
+                        (slack-alert matchup side))))]
     (send-alert home-odds home-threshold :home)
     (send-alert away-odds away-threshold :away)))
 
-(defn odds-alert [odds]
+(defn odds-alert [{:keys [alert-registry] :as config} odds]
   (let [matchup (-> odds
                     game-info->matchup
                     (update :matchup/time get-local-date))
         current-odds (-> odds :books)]
     (when-let [threshold (@alert-registry matchup)]
-      (maybe-trigger threshold
+      (maybe-trigger config
+                     threshold
                      (->> current-odds
                           (reduce (fn [acc [book {home :home-odds away :away-odds}]]
                                     (-> acc
@@ -86,48 +76,48 @@
                                   {}))
                      matchup))))
 
-(defn update-alerts [alert-req]
+(defn update-alerts [alert-registry alert-req]
   (let [mu (-> alert-req
                game-info->matchup
                (update :matchup/time get-local-date))
         threshold (:thresholds alert-req)]
     (swap! alert-registry assoc mu threshold)))
 
-(defn check-matchup [matchup]
+(defn check-matchup [db matchup]
   "Takes an incoming matchup and returns a seq of any existing
    matchups for the same date already in the DB"
   (let [db-matchups (sql/query
-                     *db*
+                     db
                      ["select * from matchup where teams = ?"
                       (:matchup/teams matchup)])
         in-matchup (get-matchup-date matchup)]
     (filter (fn [m] (= (get-matchup-date m) in-matchup)) db-matchups)))
 
-(defn store-matchup [odds]
+(defn store-matchup [db odds]
   "Takes an incoming odds bundle decides whether or not to store
    a new matchup. Returns the matchup_id used as a FK in the odds
    table."
   (let [mup (game-info->matchup odds)
-        existing-mup (check-matchup mup)]
+        existing-mup (check-matchup db mup)]
     (if (seq existing-mup)
       ;; TODO handle case if there are matching games on the same date
       ;; double headers, etc
       (:matchup/matchup_id (first existing-mup))
-      (:matchup/matchup_id (sql/insert! *db* :matchup mup)))))
+      (:matchup/matchup_id (sql/insert! db :matchup mup)))))
 
-(defn store-odds [odds]
+(defn store-odds [{:keys [db] :as config} odds]
   (let [nil->0 #(if (nil? %) 0 %)
         get-score (fn [score]
                     (-> odds :game-score score nil->0))
         home-score (get-score :home-score)
         away-score (get-score :away-score)
         ts (:timestamp odds)
-        match-id (store-matchup odds)
+        match-id (store-matchup db odds)
         lines (dissoc odds :teams :game-score :timestamp)
         odds-row {:home_score home-score
                   :away_score away-score
                   :time ts
                   :matchup_id match-id
                   :lines (with-meta lines {:pgtype "jsonb"})}]
-    (odds-alert odds)
-    (sql/insert! *db* :odds odds-row)))
+    (odds-alert config odds)
+    (sql/insert! db :odds odds-row)))

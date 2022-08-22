@@ -8,7 +8,6 @@
    [sportsball.storage :as store]
    [sportsball.utils :as utils]
    [flatland.ordered.set :refer [ordered-set]]
-   [overtone.at-at :as at-at]
    [taoensso.timbre :as log])
   (:import
    (java.time Duration)
@@ -159,7 +158,7 @@
          (filter (fn [{:keys [books]}]
                    ((complement nil?) books))))))
 
-(defn scrape-sportsbookreview []
+(defn scrape-sportsbookreview [config]
   (let [url "https://www.sportsbookreview.com/betting-odds/mlb-baseball/money-line/"
         odds-infos (-> url
                        (html->data
@@ -168,12 +167,4 @@
                                     (map specs/check-odds odds-infos))]
       (if (seq validation-errs)
         (log/error (utils/ppformat validation-errs))
-        (dorun (map store/store-odds odds-infos))))))
-
-
-;; scheduling
-
-(def scrape-pool (at-at/mk-pool))
-
-(defn schedule-scrape [scrape-fn interval]
-  (at-at/interspaced interval scrape-fn scrape-pool))
+        (dorun (map (partial store/store-odds config) odds-infos))))))

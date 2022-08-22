@@ -28,121 +28,136 @@
        (update :timestamp t/instant->sql-timestamp))))
 
 (defn mock-post
-  ([endpoint body]
-   (mock-post endpoint body :json))
-  ([endpoint body typ]
+  ([app endpoint body]
+   (mock-post app endpoint body :json))
+  ([app endpoint body typ]
    (let [body-fn (case typ
                    :json mock/json-body
                    :urlencoded mock/body)]
-     (tu/*app* (-> (mock/request :post endpoint)
-                   (body-fn body))))))
+     (app (-> (mock/request :post endpoint)
+              (body-fn body))))))
 
 (deftest insert-new-matchup
-  (tu/with-test-db
-    (let [odds (gen-odds-info)]
-      (store/store-matchup odds)
-      (is (= [{:count 1}] (tu/all-matchups))))))
+  (tu/call-with-test-config
+   (fn [config]
+      (let [odds (gen-odds-info)]
+        (store/store-matchup (:db config) odds)
+        (is (= [{:count 1}] (tu/all-matchups config)))))))
 
 (deftest same-day-same-game-storage
-  (tu/with-test-db
-    (let [odds (gen-odds-info)
-          local-time (t/instant)
-          local-time+1h (t/plus local-time (t/hours 1))
-          store-match (fn [ts]
-                        (store/store-odds
-                         (assoc odds :timestamp (t/instant->sql-timestamp ts))))]
-      ;; this test will fail if you happen to span midnight by an hour
-      (store-match local-time)
-      (store-match local-time+1h)
-      (is (= [{:count 1}] (tu/all-matchups)))
-      (is (= [{:count 2}] (tu/all-odds))))))
+  (tu/call-with-test-config
+   (fn [config]
+      (let [odds (gen-odds-info)
+            local-time (t/instant)
+            local-time+1h (t/plus local-time (t/hours 1))
+            store-match (fn [ts]
+                          (store/store-odds
+                           config
+                           (assoc odds :timestamp (t/instant->sql-timestamp ts))))]
+        ;; this test will fail if you happen to span midnight by an hour
+        (store-match local-time)
+        (store-match local-time+1h)
+        (is (= [{:count 1}] (tu/all-matchups config)))
+        (is (= [{:count 2}] (tu/all-odds config)))))))
 
 (deftest same-matchup-diff-day-storage
-  (tu/with-test-db
-    (let [odds (gen-odds-info)
-          local-time (t/instant)
-          local-time+1d (t/plus local-time (t/days 1))
-          store-match (fn [ts]
-                        (store/store-odds
-                         (assoc odds :timestamp (t/instant->sql-timestamp ts))))]
-      (store-match local-time)
-      (store-match local-time+1d)
-      (is (= [{:count 2}] (tu/all-matchups)))
-      (is (= [{:count 2}] (tu/all-odds))))))
+  (tu/call-with-test-config
+   (fn [config]
+     (let [odds (gen-odds-info)
+           local-time (t/instant)
+           local-time+1d (t/plus local-time (t/days 1))
+           store-match (fn [ts]
+                         (store/store-odds
+                          config
+                          (assoc odds :timestamp (t/instant->sql-timestamp ts))))]
+       (store-match local-time)
+       (store-match local-time+1d)
+       (is (= [{:count 2}] (tu/all-matchups config)))
+       (is (= [{:count 2}] (tu/all-odds config)))))))
 
 (deftest basic-storage-via-odds-endpoint
-  (tu/with-http-app
-    (is (= 200 (:status (mock-post "/odds" (gen-odds-info)))))
-    (is (= [{:count 1}] (tu/all-matchups)))
-    (is (= [{:count 1}] (tu/all-odds)))))
+  (tu/call-with-test-app-and-config
+   (fn [app config]
+     (is (= 200 (:status (mock-post app "/odds" (gen-odds-info)))))
+     (is (= [{:count 1}] (tu/all-matchups config)))
+     (is (= [{:count 1}] (tu/all-odds config))))))
 
 (deftest malformed-request-body-odds-endpoint
-  (tu/with-http-app
-    (is (= 400
-           (:status (mock-post "/odds"
-                     (-> (gen-odds-info)
-                         (update :timestamp (constantly nil)))))))))
+  (tu/call-with-test-app-and-config
+   (fn [app _]
+     (is (= 400
+            (:status (mock-post app "/odds"
+                                (-> (gen-odds-info)
+                                    (update :timestamp (constantly nil))))))))))
 
 (deftest malformed-request-body-alert-sub-endpoint
-  (tu/with-http-app
-    (is (= 400 (:status (mock-post "/alert-sub" {:not :correct}))))))
+  (tu/call-with-test-app-and-config
+   (fn [app _]
+     (is (= 400 (:status (mock-post app "/alert-sub" {:not :correct})))))))
 
 (deftest register-alert-via-alert-sub-endpoint
-  (tu/with-http-app
-    (is (= 200 (:status (mock-post "/alert-sub" (gen-alert-sub)))))
-    (is (= 1 (count @store/alert-registry)))))
+  (tu/call-with-test-app-and-config
+   (fn [app config]
+     (is (= 200 (:status (mock-post app "/alert-sub" (gen-alert-sub)))))
+     (is (= 1 (count @(:alert-registry config)))))))
 
 (deftest alert-triggered-when-odds-bundle-matches-element-in-registry
   (let [send-results (atom [])]
     (with-redefs [slack/send-threshold-alert
-                  (fn [book-prices _ _] (reset! send-results book-prices))]
-      (tu/with-http-app
-        (is (= 200
-               (:status
-                (mock-post "/alert-sub"
-                           (-> (gen-odds-info)
-                               (select-keys [:teams :timestamp])
-                               (assoc :thresholds {:home-threshold 150}))))))
-        (is (= 200 (:status (mock-post "/odds" (gen-odds-info)))))
-        ;; the intertops odds generated in the test data has the only home-odds better than 150
-        (is (= [[:intertops 357]] @send-results))))))
+                  (fn [config book-prices _ _]
+                    (reset! send-results book-prices))]
+      (tu/call-with-test-app-and-config
+       (fn [app _]
+         (is (= 200
+                (:status
+                 (mock-post app "/alert-sub"
+                            (-> (gen-odds-info)
+                                (select-keys [:teams :timestamp])
+                                (assoc :thresholds {:home-threshold 150}))))))
+         (is (= 200 (:status (mock-post app "/odds" (gen-odds-info)))))
+         ;; the intertops odds generated in the test data has the only home-odds better than 150
+         (is (= [[:intertops 357]] @send-results)))))))
 
 (deftest register-alert-via-slack-form
   ;; can't send the slack alert reg ack msg in tests because response_url doesn't really exist
-  (with-redefs [slack/post-msg (fn [_ _] :no-op)]
-    (tu/with-http-app
-      (is (= 200 (:status
-                  (mock-post "/slack-alert-sub"
-                             (slack-utils/mock-slack-alert-action-msg :register-button)
-                             :urlencoded))))
-      (is (= 1 (count @store/alert-registry))))))
+  (with-redefs [slack/post-msg (fn [_ _ _] :no-op)]
+    (tu/call-with-test-app-and-config
+     (fn [app config]
+       (is (= 200 (:status
+                   (mock-post app "/slack-alert-sub"
+                              (slack-utils/mock-slack-alert-action-msg :register-button)
+                              :urlencoded))))
+       (is (= 1 (count @(:alert-registry config))))))))
 
 (deftest slack-team-select-action-does-not-register-alert
-  (tu/with-http-app
-    (is (= 200 (:status
-                (mock-post "/slack-alert-sub"
-                           (slack-utils/mock-slack-alert-action-msg :team-select)
-                           :urlencoded))))
-    (is (= 0 (count @store/alert-registry)))))
+  (tu/call-with-test-app-and-config
+   (fn [app config]
+     (is (= 200 (:status
+                 (mock-post app "/slack-alert-sub"
+                            (slack-utils/mock-slack-alert-action-msg :team-select)
+                            :urlencoded))))
+     (is (= 0 (count @(:alert-registry config)))))))
 
 (deftest csv-export
-  (tu/with-test-db
-    (tu/with-temp-files
-      (let [odds (gen-odds-info)
-            local-time (t/instant)
-            local-time+1d (t/plus local-time (t/days 1))
-            store-match (fn [ts]
-                          (store/store-odds
-                           (assoc odds :timestamp (t/instant->sql-timestamp ts))))
-            test-csv (io/file tu/temp-dir "test.csv")]
-        (store-match local-time)
-        (store-match local-time+1d)
+  (tu/call-with-test-config
+   (fn [config]
+     (tu/with-temp-files
+       (let [odds (gen-odds-info)
+             local-time (t/instant)
+             local-time+1d (t/plus local-time (t/days 1))
+             store-match (fn [ts]
+                           (store/store-odds
+                            config
+                            (assoc odds :timestamp (t/instant->sql-timestamp ts))))
+             test-csv (io/file tu/temp-dir "test.csv")]
+         (store-match local-time)
+         (store-match local-time+1d)
 
-        (sbcsv/export-odds-csv test-csv)
+         (sbcsv/export-odds-csv (:db config) test-csv)
 
-        (let [[header & rows] (csv/read-csv (slurp test-csv))
-              row-maps (utils/csv->row-maps header rows)]
-          (is (= 2 (count row-maps)))
-          (is (= "200"
-                 (:BetMGM-away (first row-maps))
-                 (:BetMGM-away (second row-maps)))))))))
+         (let [[header & rows] (csv/read-csv (slurp test-csv))
+               row-maps (utils/csv->row-maps header rows)]
+           (is (= 2 (count row-maps)))
+           (is (= "200"
+                  (:BetMGM-away (first row-maps))
+                  (:BetMGM-away (second row-maps))))))))))
