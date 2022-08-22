@@ -20,5 +20,5 @@
     (.setRemoveOnCancelPolicy true)
     (.setExecuteExistingDelayedTasksAfterShutdownPolicy false)))
 
-(defn schedule-with-fixed-delay [s f initial-delay delay]
-  (.scheduleWithFixedDelay s f initial-delay delay TimeUnit/MILLISECONDS))
+(defn schedule-with-fixed-delay-in-mins [s f initial-delay delay]
+  (.scheduleWithFixedDelay s f initial-delay delay TimeUnit/MINUTES))

@@ -11,7 +11,9 @@
    [sportsball.config :as config]
    [sportsball.storage :as store]
    [sportsball.handlers :as han]
-   [sportsball.slack :as slack]))
+   [sportsball.slack :as slack]
+   [sportsball.utils :as utils]
+   [sportsball.scrape :as scrape]))
 
 (defn init-app-routes [{:keys [db slack-conn-info alert-registry] :as config}]
   (ring/ring-handler
@@ -68,6 +70,20 @@
 
 (defmethod ig/halt-key! :app/jetty [_ server]
   (.stop server))
+
+(defmethod ig/init-key :app/task-scheduler [_ {:keys [core-threads]}]
+  (prn core-threads)
+  (utils/scheduler core-threads))
+
+(defmethod ig/halt-key! :app/task-scheduler [_ scheduler]
+  (.shutdown scheduler))
+
+(defmethod ig/init-key :app/scraper [_ {:keys [config scheduler scrape-interval]}]
+  (utils/schedule-with-fixed-delay-in-mins
+   scheduler
+   #(scrape/scrape-sportsbookreview config)
+   1 ;; initial delay
+   scrape-interval))
 
 (defn init-app [config]
   (ig/init config))
