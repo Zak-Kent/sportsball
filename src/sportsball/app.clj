@@ -43,6 +43,7 @@
     {:not-found (constantly {:status 404 :body "Not found, where did it go?"})})))
 
 (defmethod ig/init-key :storage/db [_ db]
+  ;; TODO add check here to assert db is started and reachable
   (store/init-db db)
   db)
 
@@ -56,10 +57,11 @@
   (assoc slack-conn-info :channel-id
          (slack/get-channel-id slack-conn-info)))
 
-(defmethod ig/init-key :app/routes [_ config]
-  (let [config-with-alert-reg (assoc config :alert-registry (atom {}))
-        app-routes (init-app-routes config-with-alert-reg)]
-    app-routes))
+(defmethod ig/init-key :app/config [_ config]
+  (assoc config :alert-registry (atom {})))
+
+(defmethod ig/init-key :app/routes [_ {:keys [config]}]
+  (init-app-routes config))
 
 (defmethod ig/init-key :app/jetty [_ {:keys [jetty-conf app-routes] :as config}]
   (jetty/run-jetty app-routes jetty-conf))
