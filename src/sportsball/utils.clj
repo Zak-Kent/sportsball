@@ -1,6 +1,8 @@
 (ns sportsball.utils
   (:require
-   [clojure.pprint :as pprint]))
+   [clojure.pprint :as pprint])
+  (:import
+   (java.util.concurrent ScheduledThreadPoolExecutor TimeUnit)))
 
 (defn ppformat
   [& args]
@@ -12,3 +14,11 @@
         convert-row (fn [row]
                       (zipmap header-keys row))]
     (map convert-row rows)))
+
+(defn scheduler [core-threads]
+  (doto (ScheduledThreadPoolExecutor. core-threads)
+    (.setRemoveOnCancelPolicy true)
+    (.setExecuteExistingDelayedTasksAfterShutdownPolicy false)))
+
+(defn schedule-with-fixed-delay [s f initial-delay delay]
+  (.scheduleWithFixedDelay s f initial-delay delay TimeUnit/MILLISECONDS))

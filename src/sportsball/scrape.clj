@@ -8,7 +8,6 @@
    [sportsball.storage :as store]
    [sportsball.utils :as utils]
    [flatland.ordered.set :refer [ordered-set]]
-   [overtone.at-at :as at-at]
    [taoensso.timbre :as log])
   (:import
    (java.time Duration)
@@ -169,11 +168,3 @@
       (if (seq validation-errs)
         (log/error (utils/ppformat validation-errs))
         (dorun (map (partial store/store-odds config) odds-infos))))))
-
-
-;; scheduling
-
-(def scrape-pool (at-at/mk-pool))
-
-(defn schedule-scrape [scrape-fn interval]
-  (at-at/interspaced interval scrape-fn scrape-pool))

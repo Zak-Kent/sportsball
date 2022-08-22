@@ -17,7 +17,6 @@
                  [hickory "0.7.1"]
                  [org.flatland/ordered "1.15.10"]
                  [clj-http "3.12.3"]
-                 [overtone/at-at "1.2.0"]
                  [com.taoensso/timbre "5.2.1"]
                  [aero "1.1.6"]
                  [org.clojure/data.csv "1.0.1"]
