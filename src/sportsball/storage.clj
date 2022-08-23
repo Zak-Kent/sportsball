@@ -7,7 +7,8 @@
             [sportsball.json :as _]
             [sportsball.slack :as slack]
             [sportsball.config :as config]
-            [sportsball.sb-specs :as spec]))
+            [sportsball.sb-specs :as spec]
+            [taoensso.timbre :as log]))
 
 (def matchup-table-sql
   ["create table if not exists matchup (
@@ -74,6 +75,7 @@
                     (update :matchup/time get-local-date))
         current-odds (-> odds :books)]
     (when-let [threshold (@alert-registry matchup)]
+      (log/debug "Entry found in alert-registry for: %s matchup" matchup)
       (maybe-trigger config
                      threshold
                      (->> current-odds

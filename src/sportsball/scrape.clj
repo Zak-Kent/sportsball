@@ -167,4 +167,8 @@
                                     (map specs/check-odds odds-infos))]
       (if (seq validation-errs)
         (log/error (utils/ppformat validation-errs))
-        (dorun (map (partial store/store-odds config) odds-infos))))))
+        (do
+          (log/debug
+           (format "Attempting to store odds-info bundles for: %s games"
+                   (count odds-infos)))
+            (dorun (map (partial store/store-odds config) odds-infos)))))))
