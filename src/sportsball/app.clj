@@ -45,7 +45,9 @@
     {:not-found (constantly {:status 404 :body "Not found, where did it go?"})})))
 
 (defmethod ig/init-key :storage/db [_ db]
-  ;; TODO add check here to assert db is started and reachable
+  (if (store/db-reachable? db)
+    :db-reachable ;; nothing to do
+    (throw (Exception. "Database unreachable. Check db and connection config")))
   (store/init-db db)
   db)
 
@@ -72,7 +74,6 @@
   (.stop server))
 
 (defmethod ig/init-key :app/task-scheduler [_ {:keys [core-threads]}]
-  (prn core-threads)
   (utils/scheduler core-threads))
 
 (defmethod ig/halt-key! :app/task-scheduler [_ scheduler]

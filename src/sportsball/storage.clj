@@ -30,6 +30,14 @@
   (jdbc/execute! db matchup-table-sql)
   (jdbc/execute! db odds-table-sql))
 
+(defn db-reachable? [db]
+  (try
+    (:alive (first (jdbc/execute! db ["select true as alive"])))
+    (catch org.postgresql.util.PSQLException  ex
+      (if (= java.net.ConnectException  (type (ex-cause ex)))
+        false
+        (throw ex)))))
+
 (defn game-info->matchup [game-info]
   (let [ts (:timestamp game-info)
         teams (->> (:teams game-info)
