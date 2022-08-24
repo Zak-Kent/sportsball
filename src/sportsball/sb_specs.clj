@@ -2,7 +2,8 @@
   (:require [malli.core :as m]
             [malli.generator :as mg]
             [malli.transform :as mt]
-            [malli.error :as me])
+            [malli.error :as me]
+            [java-time :as t])
   (:import java.util.Date))
 
 ;; Books
@@ -86,3 +87,50 @@
 (defn check-alert-sub [sub]
   (when-let [err (valid-alert-sub? sub)]
     (me/humanize err)))
+
+(defn decode-str->local-date [ds]
+  (try
+    (t/local-date "yyyy-MM-dd" ds)
+    (catch Exception _
+      ds)))
+
+(def decode-local-date
+  (m/schema [string? {:decode/string decode-str->local-date}]))
+
+(def decode-date-range
+  (m/schema [:map
+             {:closed true}
+             [:start decode-local-date]
+             [:end decode-local-date]]))
+
+(def converted-local-date
+  (m/schema [:fn
+             {:error/fn
+              (fn [{:keys [value]} _]
+                (format "Local date: %s could not be parsed.
+                         Format should be 'yyyy-MM-dd'" value))}
+             (fn [d] (= java.time.LocalDate (type d)))]))
+
+(def converted-date-range
+  (m/schema
+   [:and [:map
+          {:closed true}
+          [:start converted-local-date]
+          [:end converted-local-date]]
+    [:fn
+     {:error/fn
+      (fn [{:keys [value]} _]
+        (let [{:keys [start end]} value]
+          (format "Start date: %s is after end date: %s"
+                  (str start) (str end))))}
+     (fn [{:keys [start end]}]
+       (t/before? start end))]]))
+
+(comment
+  ;; example usage
+  (me/humanize (m/explain converted-date-range
+                          (m/decode decode-date-range {:start "2022-08-22"
+                                                       :end "2022-08-24"}
+                                    mt/string-transformer)))
+
+  )
