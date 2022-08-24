@@ -16,7 +16,7 @@
                   {:closed true}
                   [:home-odds home-odds]
                   [:away-odds away-odds]]
-                 [:fn (fn [{:keys [:home-odds :away-odds]}]
+                 [:fn (fn [{:keys [home-odds away-odds]}]
                         (= (type home-odds) (type away-odds)))]]))
 (def book-keys [:bovada :betonline :bookmaker :heritage :intertops :youwager
                 :Bet365 :Unibet :Betway :BetMGM :888sport])
@@ -38,7 +38,7 @@
               {:closed true}
               [:home-team home-team]
               [:away-team away-team]]
-             [:fn (fn [{:keys [:home-team :away-team]}]
+             [:fn (fn [{:keys [home-team away-team]}]
                     (not= home-team away-team))]]))
 
 ;; Score
