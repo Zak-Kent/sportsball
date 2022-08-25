@@ -35,7 +35,7 @@ components are found throughout the app.
               :password <pass>
               :dbname "sportsball"}
 
- :slack/conn-info {:url <required-env-var: SPORTSBALL_SLACK_POST_URL_FILE>
+ :slack/conn-info {:URL <required-env-var: SPORTSBALL_SLACK_POST_URL_FILE>
                    :bot-token <required-env-var: SPORTSBALL_SLACK_BOT_TOKEN>
                    :channel "sports"}
 
@@ -64,6 +64,55 @@ elements. Examples of custom defined tags specific to this app can be found in
 Once the config is loaded it's passed to [Integrant](https://github.com/weavejester/integrant) a lifecycle management
 library which then initializes the various app components described in the config
 taking the order of dependencies into account.
+
+### Slack Configuration
+
+This app uses a Slack workspace to handle all user interaction. As a result
+it expects various elements to be enabled in the Slack workspace in order
+to function properly. Below is a list of Slack settings that the app expects and
+a list of interactive commands offered in the chosen Slack channel.
+
+#### Required Slack Settings
+* A `sportsball-bot` app must be created and then installed in a Slack workspace.
+  A Slack app can be generated for a workspace [here](https://api.slack.com/apps).
+
+* A channel URL must be provided to the `sportsball` app via the
+  `:slack/conn-info {:URL ...}` section of the config. This URL can be created
+  in the `incoming webhook` section of the Slack workspace. This URL controls
+  where `register-game-alert` messages will be sent.
+
+* A request URL must be registered with Slack. This URL will be sent a request
+  any time a user interacts with a button in Slack. This URL can be set in the
+  Slack `Interactivity & shortcuts` section. For now the URL should use the
+  `slack-alert-sub` endpoint.
+
+* An `oauth` token with the following scopes for the workspace needs to be
+  created. This token is the value for the `:slack/conn-info {:bot-token ...}`
+  config setting described above. Required scopes: `channels:read`,
+  `chat:write`, `commands`, `files:write`, `incoming-webhook`.
+
+* Each slash command below needs to be registered in the Slack workspace
+  and given the URL where the `sportsball` app is listening. This can be done
+  in the `Slash Commands` tab of your Slack workspace. See below for which
+  `sportsball` routes map to which slash commands.
+
+#### Slack Slash Commands
+* `/export-csv <optional <start-date> <end-date> >` - This command will send a
+  dump of the contents of the odds table for the specified date range. If no
+  date range is provided the app will attempt to send the entire contents of the
+  odds table. Slack has a `1MB` limit on file links so specifing a date range is
+  recommended. This slash command hits the `sportsball` `export-csv` endpoint,
+  this command must be created in Slack pointing at this endpoint.
+
+* `/register-game-alert` - This command will send an alert form via a Slack
+   message. This form allows a user to pick two teams playing each other on a
+   given day and set a threshold value in american odds when they would like an
+   alert to be sent to the channel. During scraping if the threshold value for
+   either team is crossed, i.e. the odds are less expensive than the threshold,
+   a message will be sent to the Slack channel alerting the user. Currently all
+   alert registrations assume that the game is on the same day that the alert
+   is registered. This slash command hits the `sportsball` `slack-alert-sub`
+   endpoint, this command must be created in Slack pointing at this endpoint.
 
 ...
 
