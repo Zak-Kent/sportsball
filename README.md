@@ -20,23 +20,50 @@ FIXME: listing of options this app accepts.
 
 ## Configuration
 
-The configuration is specified in the project's config.edn file. In that file
-there is a top level map which has the following format:
+The configuration is specified in the project's `config.edn` file. Each top
+level key in config map corresponds to a logical component in the app.
+Dependencies between these components are expressed using the `#ig/ref` tag.
+E.g. if a component map has an entry like `:app/bar {:foo-dep #ig/reg :app/foo}`
+it means that the `:app/bar` component is dependent on `:app/foo`. Below is an
+example of the app config, namespaced keys are used to indicate where the various
+components are found throughout the app.
+
 ```
-{:db {:dbtype "postgres"
-      :user <user>
-      :port <port>
-      :password <pass>
-      :dbname "sportsball"}
+{:storage/db {:dbtype "postgres"
+              :user <user>
+              :port <port>
+              :password <pass>
+              :dbname "sportsball"}
 
- :slack {:url <required-env-var: SPORTSBALL_SLACK_POST_URL_FILE>
-         :bot-token <required-env-var: SPORTSBALL_SLACK_BOT_TOKEN>}
+ :slack/conn-info {:url <required-env-var: SPORTSBALL_SLACK_POST_URL_FILE>
+                   :bot-token <required-env-var: SPORTSBALL_SLACK_BOT_TOKEN>
+                   :channel "sports"}
 
- :logging {<required-env-var: SPORTSBALL_LOG_FILE>}}
+ :app/logging {<required-env-var: SPORTSBALL_LOG_FILE>}
+
+ :app/config {:alert-registry nil
+              :db #ig/ref :storage/db
+              :slack-conn-info #ig/ref :slack/conn-info}
+
+ :app/routes {:config #ig/ref :app/config}
+
+ :app/jetty {:jetty-conf {:port 3000 :join? false}
+             :app-routes #ig/ref :app/routes}
+
+ :app/task-scheduler {:core-threads 4}
+
+ :app/scraper {:scheduler #ig/ref :app/task-scheduler
+               :config #ig/ref :app/config
+               :scrape-interval #or [#env SPORTSBALL_SCRAPE_INTERVAL_MINS 5]}}
 ```
+The [Aero](https://github.com/juxt/aero) library is used when parsing the config.
+Aero uses tagged literals to customize the behavior when parsing different config
+elements. Examples of custom defined tags specific to this app can be found in
+`src/sporsball/config.clj`.
 
-All `required-env-vars` listed above must be present in the environment when the
-program is run along with values for all the keys shown above.
+Once the config is loaded it's passed to [Integrant](https://github.com/weavejester/integrant) a lifecycle management
+library which then initializes the various app components described in the config
+taking the order of dependencies into account.
 
 ...
 
