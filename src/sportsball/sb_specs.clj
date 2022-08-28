@@ -3,7 +3,8 @@
             [malli.generator :as mg]
             [malli.transform :as mt]
             [malli.error :as me]
-            [java-time :as t])
+            [java-time :as t]
+            [clojure.string :as str])
   (:import java.util.Date))
 
 ;; Books
@@ -126,11 +127,16 @@
      (fn [{:keys [start end]}]
        (t/before? start end))]]))
 
-(comment
-  ;; example usage
-  (me/humanize (m/explain converted-date-range
-                          (m/decode decode-date-range {:start "2022-08-22"
-                                                       :end "2022-08-24"}
-                                    mt/string-transformer)))
+(defn text->date-range [date-text]
+  (let [dr-decoder (fn [dr]
+                     (m/decode decode-date-range dr mt/string-transformer))]
+    (->> (str/split date-text #" ")
+         (zipmap [:start :end])
+         dr-decoder)))
 
-  )
+(def valid-date-range?
+  (m/explainer converted-date-range))
+
+(defn check-date-range [dr]
+  (when-let [err (valid-date-range? dr)]
+    (me/humanize err)))

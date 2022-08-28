@@ -94,11 +94,14 @@
       (rr/bad-request {:error "unexpected command"}))))
 
 (defn slack-send-csv-export [config body]
-  (let [cmd (-> :body-params
-                body
-                :command)]
-    (if (= "/export-csv" cmd)
-      (do
-        (sbcsv/send-slack-csv config)
-        (rr/response {:text "sending csv export"}))
+  (let [{:keys [command text]} (select-keys (:body-params body) [:command :text])
+        date-range (when (seq text) (spec/text->date-range text))
+        fmt-err (when date-range (spec/check-date-range date-range))]
+    (if (= "/export-csv" command)
+      (if fmt-err
+        (do
+          (rr/bad-request fmt-err))
+        (do
+          (sbcsv/send-slack-csv config date-range)
+          (rr/response {:text "sending csv export"})))
       (rr/bad-request {:error "unexpected command"}))))
