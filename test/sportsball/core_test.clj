@@ -161,3 +161,67 @@
            (is (= "200"
                   (:BetMGM-away (first row-maps))
                   (:BetMGM-away (second row-maps))))))))))
+
+(deftest slack-csv-export-supports-date-ranges
+  (let [orig-pull-data-for-csv-export sbcsv/pull-data-for-csv-export
+        csv-results (atom [])
+        csv-call-count (atom 0)
+        csv-exports-complete (promise)]
+    (with-redefs [slack/send-csv (fn [_ _] :no-op)
+                  sbcsv/pull-data-for-csv-export
+                  (fn [db date-range]
+                    (let [results (orig-pull-data-for-csv-export db date-range)]
+                      (swap! csv-call-count inc)
+                      (swap! csv-results conj results)
+                      (when (= 2 @csv-call-count)
+                        (deliver csv-exports-complete :done))))]
+      (tu/call-with-test-app-and-config
+       (fn [app config]
+         (let [odds (gen-odds-info)
+               store-match (fn [ts]
+                             (store/store-odds
+                              config
+                              (assoc odds :timestamp (t/instant->sql-timestamp ts))))
+               test-inst (-> "2022-01-01"
+                             t/local-date
+                             (.atStartOfDay (t/zone-id "UTC"))
+                             t/instant)
+               test-inst+3d (t/plus test-inst (t/days 3))]
+
+           (store-match test-inst)
+           (store-match test-inst+3d)
+           (is (= [{:count 2}] (tu/all-matchups config))))
+
+         (testing "export command with no range sends all data"
+           (is (= 200 (:status
+                       (mock-post app "/export-csv" {:command "/export-csv"
+                                                     :text ""})))))
+
+         (testing "export command sends only data inside date range"
+           (is (= 200 (:status
+                       (mock-post app "/export-csv" {:command "/export-csv"
+                                                     :text "2021-12-31 2022-01-02"})))))
+
+         (testing "invalid date range format responds with 400"
+           (is (= 400 (:status
+                       (mock-post app "/export-csv" {:command "/export-csv"
+                                                     :text "can't parse this as date range"})))))
+
+         (testing "start time after end time responds with 400"
+           (is (= 400 (:status
+                       (mock-post app "/export-csv" {:command "/export-csv"
+                                                     :text "2022-01-05 2022-01-03"})))))
+
+         ;; block until both csv streamed requests above are finished
+         (let [export-state (deref csv-exports-complete 5000 :stuck)]
+           (when (= :stuck export-state)
+             (throw (Exception. "csv export promise not delievered")))
+           (is (= :done export-state)))
+
+         (testing "streamed exports have the expected number of odds rows returned"
+           (let [[all-odds odds-in-range] @csv-results]
+             ;; both odds rows plus header row
+             (is (= 3 (count all-odds)))
+
+             ;; only one odds row plus header row
+             (is (= 2 (count odds-in-range))))))))))
