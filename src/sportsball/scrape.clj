@@ -158,17 +158,30 @@
          (filter (fn [{:keys [books]}]
                    ((complement nil?) books))))))
 
-(defn scrape-sportsbookreview [config]
-  (let [url "https://www.sportsbookreview.com/betting-odds/mlb-baseball/money-line/"
-        odds-infos (-> url
-                       (html->data
-                        sportsbookreview->odds-infos))]
-    (let [validation-errs  (filter (complement nil?)
-                                    (map specs/check-odds odds-infos))]
-      (if (seq validation-errs)
-        (log/error (utils/ppformat validation-errs))
-        (do
-          (log/debug
-           (format "Attempting to store odds-info bundles for: %s games"
-                   (count odds-infos)))
-            (dorun (map (partial store/store-odds config) odds-infos)))))))
+(defn validate-and-store-odds-infos [config odds-infos]
+  (let [validation-errs  (filter (complement nil?)
+                                 (map specs/check-odds odds-infos))]
+    (if (seq validation-errs)
+      (log/error (utils/ppformat validation-errs))
+      (do
+        (log/debug
+         (format "Attempting to store odds-info bundles for: %s games"
+                 (count odds-infos)))
+        (dorun (map (partial store/store-odds config) odds-infos))))))
+
+(defn scrape-sportsbookreview
+  ([config]
+   (scrape-sportsbookreview config
+                            sportsbookreview->odds-infos
+                            (partial validate-and-store-odds-infos config)))
+  ([config conversion-fn store-fn]
+   (let [url "https://www.sportsbookreview.com/betting-odds/mlb-baseball/money-line/"
+         odds-infos (html->data url conversion-fn)]
+     (store-fn odds-infos))))
+
+(defn trigger-sportsbookreview-scrape
+  "Helper that allows a scrape to be triggered from the REPL. Takes a file path
+   for the dst arg and stores the raw HTML from the scrape in that location"
+  [dst]
+  (let [html->dst (fn [html] (spit dst html))]
+    (scrape-sportsbookreview {} identity html->dst)))
