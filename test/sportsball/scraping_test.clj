@@ -8,10 +8,7 @@
 (deftest scrape-pulls-odds-infos
   (let [odds-infos (-> (slurp "dev-resources/live-game-scrape.html")
                        sc/sportsbookreview->odds-infos)]
-
-    ;; 21 games are present in page but only 12 have valid odds-info
-    ;; information the rest are filtered out during scraping
-    (is (= 12 (count odds-infos)))
+    (is (= 15 (count odds-infos)))
 
     (testing "Check that all book odds have a value for home/away team odds"
       (is (true? (->> odds-infos
@@ -33,5 +30,5 @@
          ;; trigger scrape, this will cause odds-infos above to be stored
          (sc/scrape-sportsbookreview config)
 
-         (is (= [{:count 12}] (tu/all-odds config)))
-         (is (= [{:count 12}] (tu/all-matchups config))))))))
+         (is (= [{:count 15}] (tu/all-odds config)))
+         (is (= [{:count 15}] (tu/all-matchups config))))))))

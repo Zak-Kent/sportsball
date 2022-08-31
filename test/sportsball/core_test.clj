@@ -116,7 +116,7 @@
                                 (assoc :thresholds {:home-threshold 150}))))))
          (is (= 200 (:status (mock-post app "/odds" (gen-odds-info)))))
          ;; the intertops odds generated in the test data has the only home-odds better than 150
-         (is (= [[:intertops 357]] @send-results)))))))
+         (is (= [[:Caesars 357]] @send-results)))))))
 
 (deftest register-alert-via-slack-form
   ;; can't send the slack alert reg ack msg in tests because response_url doesn't really exist
@@ -158,7 +158,7 @@
          (let [[header & rows] (csv/read-csv (slurp test-csv))
                row-maps (utils/csv->row-maps header rows)]
            (is (= 2 (count row-maps)))
-           (is (= "200"
+           (is (= "-357"
                   (:BetMGM-away (first row-maps))
                   (:BetMGM-away (second row-maps))))))))))
 

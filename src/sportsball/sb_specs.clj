@@ -19,8 +19,7 @@
                   [:away-odds away-odds]]
                  [:fn (fn [{:keys [home-odds away-odds]}]
                         (= (type home-odds) (type away-odds)))]]))
-(def book-keys [:bovada :betonline :bookmaker :heritage :intertops :youwager
-                :Bet365 :Unibet :Betway :BetMGM :888sport])
+(def book-keys [:BetMGM :FanDuel :Caesars :DraftKings :WynnBET :BetRivers :PointsBet])
 (def books (m/schema
             [:map-of
              (into [] (cons :enum book-keys))
@@ -30,7 +29,7 @@
 (def team-abrv [:enum "ARI" "ATL" "BAL" "BOS" "CHC" "CWS" "CIN" "CLE" "COL"
                 "DET" "FLA" "HOU" "KAN" "KC" "LAA" "LAD" "MIA" "MIL" "MIN" "NYM"
                 "NYY" "OAK" "PHI" "PIT" "SD" "SF" "SEA" "STL" "TB" "TEX" "TOR"
-                "WAS" "WSH"])
+                "WAS" "WSH" "CHW"])
 (def home-team (m/schema team-abrv))
 (def away-team (m/schema team-abrv))
 (def teams (m/schema
