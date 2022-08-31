@@ -75,7 +75,7 @@
                 :content
                 first
                 :content
-                first
+                second
                 :content
                 first))
           (d->nil [odd]
@@ -87,8 +87,11 @@
 
 (defn sbr-get-game-scores [page]
   (let [scores (hs/select (hs/descendant
-                           (class-prefix-selector "finalScore"))
+                           (class-prefix-selector "GameRows_scores"))
                           page)
+        ;; TODO check if cases when one teams score is 0 and the other
+        ;; is nil matters, or is only an edge case when in first inning
+        ;; of the game.
         build-game-score (fn [[a h]]
                            {:away-score a
                             :home-score h})
@@ -115,25 +118,26 @@
   [html]
   (let [page (-> html h/parse h/as-hickory)
         game-row (hs/select (hs/descendant
-                             (class-prefix-selector "eventMarketGridContainer"))
+                             (class-prefix-selector "GameRows_eventMarketGridContainer"))
                             page)
         teams (->> page
                    (hs/select (hs/descendant
-                               (class-prefix-selector "participants")
-                               (class-prefix-selector "gradientContainer")))
+                               (class-prefix-selector "GameRows_participants")
+                               (class-prefix-selector "GameRows_gradientContainer")))
                    (partition 2)
                    (map sbr-get-teams))
         books (->> page
                    (hs/select (hs/descendant
-                               (class-prefix-selector "columnsContainer")
+                               (class-prefix-selector "OddsTable_columnsContainer")
                                (hs/attr :alt)))
                    sbr-get-books
+                   (filter #(not= "" %))
                    (apply ordered-set))
         book-odds (->> game-row
                        (map #(hs/select
                               (hs/descendant
-                               (class-prefix-selector "columnsContainer")
-                               (class-prefix-selector "oddsNumber")) %))
+                               (class-prefix-selector "GameRows_columnsContainer")
+                               (class-prefix-selector "OddsCells_oddsNumber")) %))
                        (map #(partition 2 %))
                        (map #(map sbr-get-book-odds %))
                        (map #(zipmap (map keyword books) %)))
