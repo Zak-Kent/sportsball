@@ -51,9 +51,8 @@
     {home-thres :home-threshold
      away-thres :away-threshold} :thresholds}]
   (let [game (format "%s-%s" home away)]
-    (format "Alert registered for the following game: %s
-             Alert thresholds: %s, %s"
-            game home-thres away-thres)))
+    (format "Alert registered for the following game: %s /n Alert thresholds: /n %s: %s, %s: %s"
+            game home home-thres away away-thres)))
 
 (defn send-threshold-alert [config book-prices matchup side]
   (let [current-prices (->> book-prices
