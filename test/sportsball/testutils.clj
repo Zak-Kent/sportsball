@@ -11,7 +11,8 @@
             [sportsball.storage :as store]
             [sportsball.app :as sbapp]
             [sportsball.config :as config]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [sportsball.metrics :as metrics]))
 
 (defn db-config []
   {:dbtype "postgresql"
@@ -26,7 +27,8 @@
 (defn mock-app-config []
   {:db (db-config)
    :slack-conn-info {:url "foo" :bot-token "bar"}
-   :alert-registry (atom {})})
+   :alert-registry (atom {})
+   :metrics (metrics/create-registry)})
 
 (defn build-test-db []
   (let [db "sportsball_test"

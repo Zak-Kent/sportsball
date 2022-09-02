@@ -13,7 +13,8 @@
    [sportsball.handlers :as han]
    [sportsball.slack :as slack]
    [sportsball.utils :as utils]
-   [sportsball.scrape :as scrape]))
+   [sportsball.scrape :as scrape]
+   [sportsball.metrics :as metrics]))
 
 (defn init-app-routes [{:keys [db slack-conn-info alert-registry] :as config}]
   (ring/ring-handler
@@ -62,7 +63,9 @@
          (slack/get-channel-id slack-conn-info)))
 
 (defmethod ig/init-key :app/config [_ config]
-  (assoc config :alert-registry (atom {})))
+  (-> config
+      (assoc :alert-registry (atom {}))
+      (assoc :metrics (metrics/create-registry))))
 
 (defmethod ig/init-key :app/routes [_ {:keys [config]}]
   (init-app-routes config))

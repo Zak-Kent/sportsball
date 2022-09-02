@@ -8,7 +8,8 @@
    [sportsball.storage :as store]
    [sportsball.utils :as utils]
    [flatland.ordered.set :refer [ordered-set]]
-   [taoensso.timbre :as log])
+   [taoensso.timbre :as log]
+   [metrics.counters :as mcount])
   (:import
    (java.time Duration)
    (org.openqa.selenium WebDriver)
@@ -168,9 +169,13 @@
     (if (seq validation-errs)
       (log/error (utils/ppformat validation-errs))
       (do
-        (log/debug
-         (format "Attempting to store odds-info bundles for: %s games"
-                 (count odds-infos)))
+        (let [odds-infos-count (count odds-infos)]
+          (mcount/inc!
+           (-> config :metrics :odds-infos-found)
+           odds-infos-count)
+          (log/debug
+           (format "Attempting to store odds-info bundles for: %s games"
+                   odds-infos-count)))
         (dorun (map (partial store/store-odds config) odds-infos))))))
 
 (defn scrape-sportsbookreview

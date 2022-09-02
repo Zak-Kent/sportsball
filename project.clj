@@ -20,7 +20,8 @@
                  [com.taoensso/timbre "5.2.1"]
                  [aero "1.1.6"]
                  [org.clojure/data.csv "1.0.1"]
-                 [integrant "0.8.0"]]
+                 [integrant "0.8.0"]
+                 [metrics-clojure "2.10.0"]]
   :main ^:skip-aot sportsball.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all

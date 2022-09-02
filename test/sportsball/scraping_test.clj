@@ -3,7 +3,8 @@
    [clojure.test :refer :all]
    [sportsball.scrape :as sc]
    [sportsball.storage :as store]
-   [sportsball.testutils :as tu]))
+   [sportsball.testutils :as tu]
+   [metrics.counters :as mcount]))
 
 (deftest scrape-pulls-odds-infos
   (let [odds-infos (-> (slurp "dev-resources/live-game-scrape.html")
@@ -31,4 +32,6 @@
          (sc/scrape-sportsbookreview config)
 
          (is (= [{:count 15}] (tu/all-odds config)))
-         (is (= [{:count 15}] (tu/all-matchups config))))))))
+         (is (= [{:count 15}] (tu/all-matchups config)))
+
+         (is (= 15 (mcount/value (-> config :metrics :odds-infos-found)))))))))
