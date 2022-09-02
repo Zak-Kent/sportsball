@@ -49,7 +49,7 @@
          ranged-query (if (seq date-range)
                         (-> (str/join
                              " "
-                             [base-query "where odds.time >= ?::timestamp and odds.time < ?::timestamp"])
+                             [base-query "where odds.time >= ?::timestamp and odds.time <= ?::timestamp"])
                             list
                             (concat [start end]))
                         [base-query])
