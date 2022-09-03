@@ -4,7 +4,8 @@
             [clojure.string :as str]
             [sportsball.sb-specs :as specs]
             [sportsball.config :as config]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [sportsball.metrics :as metrics]))
 
 (defn get-channel-id [{:keys [bot-token channel]}]
   (let [channels (-> (client/get "https://slack.com/api/conversations.list"
@@ -125,3 +126,10 @@
                               {:name "file" :content csv-data}
                               {:name "channels" :content channel-id}]
                   :oauth-token bot-token})))
+
+(defn send-health-check [{:keys [slack-conn-info]} health-msg]
+  (post-simple-msg slack-conn-info {:text health-msg}))
+
+(defn app-health-check [{:keys [metrics] :as config}]
+  (let [health-msg (metrics/health-check-msg metrics)]
+    (send-health-check config health-msg)))

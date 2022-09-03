@@ -105,3 +105,12 @@
           (sbcsv/send-slack-csv config date-range)
           (rr/response {:text "sending csv export"})))
       (rr/bad-request {:error "unexpected command"}))))
+
+(defn slack-send-health-check [config body]
+  (let [cmd (-> :body-params
+                body
+                :command)]
+    (if (= "/health-check" cmd)
+      (rr/response (slack/app-health-check config))
+      (rr/bad-request {:error "unexpected command"}))))
+

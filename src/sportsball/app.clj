@@ -33,7 +33,12 @@
               :handler (partial han/slack-send-alert-register-msg slack-conn-info)}}]
      ["/export-csv"
       {:post {:summary "Sends a csv export of the odds table to slack"
-              :handler (partial han/slack-send-csv-export config)}}]]
+              :handler (partial han/slack-send-csv-export config)}}]
+     ["/health-check"
+      {:post {:summary "Sends a slack msg containing metric inforamtion about the system"
+              :handler (partial han/slack-send-health-check
+                                (select-keys config [:slack-conn-info
+                                                     :metrics]))}}]]
     {:data {:muuntaja
             (m/create (-> m/default-options
                           (update :formats
