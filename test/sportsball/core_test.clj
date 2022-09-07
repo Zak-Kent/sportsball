@@ -8,7 +8,6 @@
             [sportsball.sb-specs :as sbspec]
             [sportsball.storage :as store]
             [sportsball.slack-testutils :as slack-utils]
-            [ring.mock.request :as mock]
             [sportsball.slack :as slack]
             [clojure.java.io :as io]
             [clojure.data.csv :as csv]
@@ -26,16 +25,6 @@
   ([seed]
    (-> (mg/generate sbspec/alert-sub {:seed seed})
        (update :timestamp t/instant->sql-timestamp))))
-
-(defn mock-post
-  ([app endpoint body]
-   (mock-post app endpoint body :json))
-  ([app endpoint body typ]
-   (let [body-fn (case typ
-                   :json mock/json-body
-                   :urlencoded mock/body)]
-     (app (-> (mock/request :post endpoint)
-              (body-fn body))))))
 
 (deftest insert-new-matchup
   (tu/call-with-test-config
@@ -78,7 +67,7 @@
 (deftest basic-storage-via-odds-endpoint
   (tu/call-with-test-app-and-config
    (fn [app config]
-     (is (= 200 (:status (mock-post app "/odds" (gen-odds-info)))))
+     (is (= 200 (:status (tu/mock-post app "/odds" (gen-odds-info)))))
      (is (= [{:count 1}] (tu/all-matchups config)))
      (is (= [{:count 1}] (tu/all-odds config))))))
 
@@ -86,19 +75,19 @@
   (tu/call-with-test-app-and-config
    (fn [app _]
      (is (= 400
-            (:status (mock-post app "/odds"
+            (:status (tu/mock-post app "/odds"
                                 (-> (gen-odds-info)
                                     (update :timestamp (constantly nil))))))))))
 
 (deftest malformed-request-body-alert-sub-endpoint
   (tu/call-with-test-app-and-config
    (fn [app _]
-     (is (= 400 (:status (mock-post app "/alert-sub" {:not :correct})))))))
+     (is (= 400 (:status (tu/mock-post app "/alert-sub" {:not :correct})))))))
 
 (deftest register-alert-via-alert-sub-endpoint
   (tu/call-with-test-app-and-config
    (fn [app config]
-     (is (= 200 (:status (mock-post app "/alert-sub" (gen-alert-sub)))))
+     (is (= 200 (:status (tu/mock-post app "/alert-sub" (gen-alert-sub)))))
      (is (= 1 (count @(:alert-registry config)))))))
 
 (deftest alert-triggered-when-odds-bundle-matches-element-in-registry
@@ -110,11 +99,11 @@
        (fn [app _]
          (is (= 200
                 (:status
-                 (mock-post app "/alert-sub"
+                 (tu/mock-post app "/alert-sub"
                             (-> (gen-odds-info)
                                 (select-keys [:teams :timestamp])
                                 (assoc :thresholds {:home-threshold 150}))))))
-         (is (= 200 (:status (mock-post app "/odds" (gen-odds-info)))))
+         (is (= 200 (:status (tu/mock-post app "/odds" (gen-odds-info)))))
          ;; the intertops odds generated in the test data has the only home-odds better than 150
          (is (= [[:Caesars 357]] @send-results)))))))
 
@@ -124,7 +113,7 @@
     (tu/call-with-test-app-and-config
      (fn [app config]
        (is (= 200 (:status
-                   (mock-post app "/slack-alert-sub"
+                   (tu/mock-post app "/slack-alert-sub"
                               (slack-utils/mock-slack-alert-action-msg :register-button)
                               :urlencoded))))
        (is (= 1 (count @(:alert-registry config))))))))
@@ -133,7 +122,7 @@
   (tu/call-with-test-app-and-config
    (fn [app config]
      (is (= 200 (:status
-                 (mock-post app "/slack-alert-sub"
+                 (tu/mock-post app "/slack-alert-sub"
                             (slack-utils/mock-slack-alert-action-msg :team-select)
                             :urlencoded))))
      (is (= 0 (count @(:alert-registry config)))))))
@@ -194,22 +183,22 @@
 
          (testing "export command with no range sends all data"
            (is (= 200 (:status
-                       (mock-post app "/export-csv" {:command "/export-csv"
+                       (tu/mock-post app "/export-csv" {:command "/export-csv"
                                                      :text ""})))))
 
          (testing "export command sends only data inside date range"
            (is (= 200 (:status
-                       (mock-post app "/export-csv" {:command "/export-csv"
+                       (tu/mock-post app "/export-csv" {:command "/export-csv"
                                                      :text "2021-12-31 2022-01-02"})))))
 
          (testing "invalid date range format responds with 400"
            (is (= 400 (:status
-                       (mock-post app "/export-csv" {:command "/export-csv"
+                       (tu/mock-post app "/export-csv" {:command "/export-csv"
                                                      :text "can't parse this as date range"})))))
 
          (testing "start time after end time responds with 400"
            (is (= 400 (:status
-                       (mock-post app "/export-csv" {:command "/export-csv"
+                       (tu/mock-post app "/export-csv" {:command "/export-csv"
                                                      :text "2022-01-05 2022-01-03"})))))
 
          ;; block until both csv streamed requests above are finished

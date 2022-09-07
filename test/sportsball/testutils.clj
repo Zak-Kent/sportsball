@@ -12,7 +12,8 @@
             [sportsball.app :as sbapp]
             [sportsball.config :as config]
             [clojure.java.io :as io]
-            [sportsball.metrics :as metrics]))
+            [sportsball.metrics :as metrics]
+            [ring.mock.request :as mock]))
 
 (defn db-config []
   {:dbtype "postgresql"
@@ -86,3 +87,13 @@
 
 (defn all-odds [{:keys [db]}]
   (query-test-db db "select count(*) from odds"))
+
+(defn mock-post
+  ([app endpoint body]
+   (mock-post app endpoint body :json))
+  ([app endpoint body typ]
+   (let [body-fn (case typ
+                   :json mock/json-body
+                   :urlencoded mock/body)]
+     (app (-> (mock/request :post endpoint)
+              (body-fn body))))))
